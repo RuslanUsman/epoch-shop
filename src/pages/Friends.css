@@ -1,0 +1,193 @@
+:root {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --danger: #ff4d4d;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+}
+
+/* Общий фон */
+.friends-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+  color: var(--text);
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Секции */
+.friends-section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-neon);
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.friends-section h2 {
+  margin: 0 0 12px;
+  font-size: 1.3rem;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+/* Поиск */
+.friends-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.friends-search input {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-dark-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.friends-search input::placeholder {
+  color: var(--muted);
+}
+
+.friends-search button {
+  padding: 10px 16px;
+  background: var(--accent);
+  border: 1px solid var(--accent-2);
+  border-radius: 8px;
+  color: var(--bg-dark-1);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--shadow-neon);
+  transition: background .2s, transform .1s;
+}
+
+.friends-search button:hover {
+  background: var(--accent-2);
+  transform: translateY(-2px);
+}
+
+/* Сетка карточек */
+.friends-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+/* Заявка и карточка */
+.friend-request,
+.friend-card {
+  background: var(--bg-dark-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 0 6px var(--accent);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* Инфо в заявке */
+.friend-request .info {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-request .info .name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.friend-request .info .tg {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Кнопки действий */
+.friend-request .actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.friend-request button {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.friend-request .btn-accept {
+  border-color: var(--accent);
+}
+
+.friend-request .btn-accept:hover {
+  background: var(--accent);
+  color: var(--bg-dark-1);
+}
+
+.friend-request .btn-decline {
+  border-color: var(--danger);
+}
+
+.friend-request .btn-decline:hover {
+  background: var(--danger);
+  color: var(--bg-dark-1);
+}
+
+/* Карточка друга */
+.friend-card {
+  flex-direction: column;
+  text-align: center;
+}
+
+.friend-card .btn-remove {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.friend-card .btn-remove:hover {
+  background: var(--danger);
+  color: var(--bg-dark-1);
+}
+
+/* Плейсхолдер */
+.empty {
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* Адаптив */
+@media (max-width: 640px) {
+  .friends-search {
+    flex-direction: column;
+  }
+  .friends-search button {
+    width: 100%;
+  }
+  .friends-grid {
+    grid-template-columns: 1fr;
+  }
+}

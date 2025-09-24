@@ -1,0 +1,98 @@
+/* Skeleton.css */
+
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #ddd 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-name {
+  width: 60%;
+  height: 24px;
+}
+
+.skeleton-username {
+  width: 40%;
+  height: 18px;
+}
+
+.skeleton-points {
+  width: 50%;
+  height: 18px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+
+
+/* src/components/Skeleton.css */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #ddd 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+.skeleton-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.skeleton-name {
+  width: 60%;
+  height: 24px;
+}
+
+.skeleton-username {
+  width: 40%;
+  height: 18px;
+}
+
+.skeleton-points {
+  width: 50%;
+  height: 18px;
+}
+
+.skeleton-button {
+  width: 140px;
+  height: 32px;
+}
+
+.skeleton-input {
+  width: 100px;
+  height: 32px;
+}

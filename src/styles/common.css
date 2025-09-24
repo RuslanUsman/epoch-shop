@@ -1,0 +1,26 @@
+/* src/styles/common.css */
+/* Подключи шрифт Orbitron в index.html:
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+*/
+
+:root {
+  --bg: #0d0f11;
+  --panel: rgba(10, 12, 14, 0.95);
+  --panel-soft: rgba(20, 24, 28, 0.85);
+  --text: #e0e0e0;
+  --muted: #8f9aa3;
+  --line: rgba(255,255,255,0.08);
+  --neon: #00c8ff;
+  --neon-strong: #00e0ff;
+  --accent-dark: #003c5a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Orbitron', sans-serif;
+}
+
+a { color: inherit; }

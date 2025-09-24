@@ -1,0 +1,258 @@
+/* src/pages/Profile.css */
+
+/* 1. Цветовые переменные и сброс */
+:root {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --danger: #ff4d4d;
+  --danger-2: #ff1a1a;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. Фон страницы и отступ под хедер */
+.profile-page {
+  min-height: 100vh;
+  /* Отступ сверху: высота шапки (64px) + gap (16px) */
+  padding-top: calc(64px + 16px);
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: 16px;
+  background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+}
+
+/* 3. Карточка профиля */
+.profile-card {
+  width: 100%;
+  max-width: 900px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: var(--shadow-neon);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .profile-card {
+    flex-direction: row;
+  }
+}
+
+/* 4. Левая колонка: аватар и кнопки */
+.profile-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Кнопка загрузки аватара */
+.profile-upload-label {
+  padding: 8px 16px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0c0e;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.profile-upload-label:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(0, 255, 170, 0.4);
+}
+
+/* Кнопка удаления аватара */
+.profile-delete-btn {
+  padding: 8px 16px;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
+}
+.profile-delete-btn:hover {
+  background: var(--danger-2);
+  transform: translateY(-1px);
+}
+
+/* 5. Правая колонка: данные пользователя */
+.profile-right {
+  flex: 1;
+  color: var(--text);
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(0, 255, 170, 0.4);
+}
+
+.profile-username {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.profile-points {
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+.profile-points span {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* 6. Кнопки действий */
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  color: #0a0c0e;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.profile-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(0, 255, 170, 0.3);
+}
+
+.profile-action-friends {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  color: #fff;
+}
+
+.profile-action-messages {
+  background: linear-gradient(90deg, #6366f1, #4f46e5);
+  color: #fff;
+}
+
+.profile-action-store {
+  background: linear-gradient(90deg, #10b981, #059669);
+  color: #fff;
+}
+
+/* 7. Адаптив */
+@media (max-width: 640px) {
+  .profile-page {
+    padding-top: calc(64px + 12px);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .profile-card {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .profile-name {
+    font-size: 1.25rem;
+  }
+
+  .profile-action-btn {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+
+
+
+
+/* Profile.css */
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+.profile-loading {
+  font-size: 1.2rem;
+  color: #555;
+  text-align: center;
+  margin-top: 50px;
+  animation: pulse 1.5s infinite;
+}
+
+.profile-upload-label.loading {
+  animation: pulse 1.5s infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+
+
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #ddd 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.skeleton-button {
+  width: 100px;
+  height: 32px;
+  margin-top: 8px;
+}
+
+.profile-upload-label.loading,
+.profile-delete-btn.loading {
+  pointer-events: none;
+  opacity: 0.6;
+  animation: shimmer 1.5s infinite;
+}

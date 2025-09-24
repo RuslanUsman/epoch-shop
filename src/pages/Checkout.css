@@ -1,0 +1,74 @@
+/* src/pages/Checkout.css */
+
+.checkout-page {
+  min-height: calc(100vh - var(--navbar-height) - 60px);
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: var(--panel);
+}
+
+.checkout-page h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 20px;
+  text-align: center;
+  text-shadow: 0 0 6px rgba(0, 255, 170, 0.4);
+}
+
+.checkout-page p {
+  font-size: 1rem;
+  margin: 8px 0;
+  color: var(--text);
+  text-align: center;
+}
+
+/* Карточка */
+.checkout-page {
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.checkout-page p {
+  font-size: 1.05rem;
+}
+
+/* Кнопка */
+.checkout-btn {
+  display: inline-block;
+  margin: 24px auto 0;
+  padding: 14px 28px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0c0e;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.25);
+}
+
+.checkout-btn:hover {
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(0, 255, 170, 0.4);
+}
+
+.checkout-btn:active {
+  transform: scale(0.96);
+}
+
+/* Адаптив */
+@media (max-width: 600px) {
+  .checkout-page {
+    padding: 24px 12px;
+  }
+  .checkout-btn {
+    width: 100%;
+  }
+}

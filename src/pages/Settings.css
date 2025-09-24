@@ -1,0 +1,141 @@
+/* src/pages/Settings.css */
+
+.settings-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-neon);
+  animation: fadeIn 0.3s ease;
+}
+
+.settings-page h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--accent);
+  text-shadow: 0 0 6px rgba(0, 255, 170, 0.3);
+}
+
+.settings-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.settings-tabs button {
+  padding: 8px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.settings-tabs button:hover {
+  background: var(--accent-2);
+  color: #0a0c0e;
+  transform: translateY(-2px);
+}
+
+.settings-tabs button.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0c0e;
+  box-shadow: var(--shadow-neon);
+}
+
+.settings-content {
+  background: var(--bg-dark-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  color: var(--text);
+}
+
+.settings-content h2 {
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+
+.settings-content label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.settings-content input,
+.settings-content select {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.settings-content input:focus,
+.settings-content select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(0, 255, 170, 0.3);
+  outline: none;
+}
+
+.settings-content button {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent-2);
+  color: #0a0c0e;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.settings-content button:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.settings-content button:active {
+  transform: scale(0.96);
+}
+
+.settings-content button.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.settings-content button.danger:hover {
+  background: #ff6666;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .settings-tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-tabs button {
+    width: 100%;
+    text-align: center;
+  }
+}

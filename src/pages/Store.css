@@ -1,0 +1,322 @@
+/* src/pages/Store.css */
+
+/* 1. Reset и цветовые переменные */
+:root {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+  --danger: #ff4d4d;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. Базовые стили страницы */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+  color: var(--text);
+}
+
+/* 3. Обёртка и контейнер */
+.store-page {
+  display: flex;
+  justify-content: center;
+  padding-top: calc(64px + 16px);
+  padding-bottom: 24px;
+}
+
+.store-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  overflow-x: hidden;
+}
+
+/* 4. Заголовок */
+.store-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+}
+
+/* 5. Секция категорий */
+.category-tabs {
+  width: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.category-tabs::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+
+.tab {
+  padding: 8px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.tab:hover {
+  background: var(--accent-2);
+  color: #0a0c0e;
+  transform: translateY(-2px);
+}
+
+.tab.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0c0e;
+  box-shadow: var(--shadow-neon);
+}
+
+/* 6. Сетка товаров */
+.products-grid {
+  width: 100%;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  justify-items: center;
+  margin-bottom: 48px;
+  overflow: hidden;
+}
+
+/* 7. Карточка товара */
+.product-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+  box-shadow: var(--shadow-neon);
+  animation: fadeIn 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 20px rgba(0, 255, 170, 0.3);
+}
+
+/* Подсветка, если товар уже в корзине */
+.product-card.in-cart {
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 15px rgba(0, 255, 170, 0.4);
+}
+/* 8. Изображение */
+.product-img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+/* 9. Название и описание */
+.product-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.product-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+  flex: 1;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+/* 10. Цена */
+.price {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.price-rub {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.price-points {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 11. Оплата баллами */
+.pay-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.pay-checkbox input {
+  accent-color: var(--accent-2);
+}
+
+/* 12. Кнопки и количество */
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-btn {
+  background: var(--accent-2);
+  color: #0a0c0e;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.qty-btn:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.qty-btn:active {
+  transform: scale(0.95);
+}
+
+.add-btn {
+  background: var(--accent-2);
+  color: #0a0c0e;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.add-btn:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.add-btn:active {
+  transform: scale(0.95);
+}
+
+.add-btn:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.add-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* 13. Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 14. Адаптив */
+@media (max-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-tabs {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto;
+    gap: 8px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .product-card {
+    padding: 12px;
+  }
+
+  .product-img {
+    max-height: 120px;
+    margin-bottom: 8px;
+  }
+
+  .product-name {
+    font-size: 1rem;
+  }
+
+  .product-desc {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .add-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .add-icon {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}

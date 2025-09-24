@@ -1,0 +1,192 @@
+/* src/pages/chat.css */
+
+/* 1. Основные переменные (подключаются из common.css) */
+/*    --panel, --line, --text, --muted, --accent, --accent-2 и т.д. */
+
+/* 2. Обёртка всей страницы чата */
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--panel);
+
+  /* чтобы чат не упирался в подвал */
+  padding-bottom: 60px; /* высота подвала */
+}
+
+/* 3. Список сообщений */
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  /* отступ снизу, чтобы input не перекрывался */
+  padding-bottom: 80px; /* высота chat-input-wrapper */
+}
+
+/* 4. Разделитель по дате */
+.message-group .date-separator {
+  align-self: center;
+  background: var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin: 4px 0;
+}
+
+/* 5. Общие настройки для строки сообщения */
+.message-row {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* 6. Входящие сообщения (аватар слева) */
+.message-row.incoming {
+  justify-content: flex-start;
+  flex-direction: row;
+}
+
+/* 7. Исходящие сообщения (аватар справа) */
+.message-row.outgoing {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
+
+/* 8. Аватар */
+.avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 9. Пузырёк сообщения */
+.message-bubble {
+  position: relative;
+  max-width: 65%;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: var(--line);
+  color: var(--text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+/* 10. Цвет исходящих пузырьков */
+.message-row.outgoing .message-bubble {
+  background: var(--accent);
+  color: #0a0c0e;
+}
+
+/* 11. Отступы вокруг пузырьков */
+.message-row.incoming .message-bubble {
+  margin-right: auto;
+}
+.message-row.outgoing .message-bubble {
+  margin-left: auto;
+}
+
+/* 12. Оптимистичные сообщения */
+.optimistic .message-bubble {
+  opacity: 0.6;
+}
+
+/* 13. Заголовок сообщения (имя + время) */
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+}
+.sender-name {
+  font-weight: 600;
+  color: var(--accent-2);
+}
+.message-time {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+/* 14. Контент сообщения */
+.message-content {
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+/* 15. Футер сообщения (статус) */
+.message-footer {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.message-row.outgoing .status {
+  margin-left: 6px;
+}
+
+/* 16. Контейнер ввода */
+.chat-input-wrapper {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  gap: 6px;
+}
+
+/* 17. Поле ввода текста */
+.chat-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+}
+
+/* 18. Кнопки отправки и выбора эмодзи */
+.send-btn,
+.emoji-btn {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #0a0c0e;
+  border: none;
+  border-radius: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.emoji-btn {
+  background: var(--accent-2);
+}
+.send-btn:hover:not(:disabled),
+.emoji-btn:hover {
+  background: var(--accent-2);
+}
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 19. Пикер эмодзи */
+.emoji-picker-container {
+  position: absolute;
+  bottom: 56px;   /* чуть выше поля ввода */
+  right: 16px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}

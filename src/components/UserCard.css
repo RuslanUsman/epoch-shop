@@ -1,0 +1,80 @@
+:root {
+  --bg-dark-2: #17181a;
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --shadow-neon: 0 0 15px rgba(0, 255, 170, 0.15);
+}
+
+.usercard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-dark-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: var(--shadow-neon);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.usercard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.3);
+}
+
+.usercard-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.usercard-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.usercard-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.usercard-tg {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.usercard-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-add {
+  padding: 6px 12px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #0a0c0e;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.btn-add:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 8px rgba(0, 255, 170, 0.4);
+}
+
+.btn-profile {
+  padding: 6px 12px;
+  background: var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background .15s ease;
+}
+
+.btn-profile:hover {
+  background: #4a4f55;
+}

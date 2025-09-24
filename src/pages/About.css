@@ -1,0 +1,70 @@
+.about-page {
+  min-height: 100vh;
+  padding: 40px 16px;
+  background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.about-card {
+  max-width: 800px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 32px;
+  box-shadow: var(--shadow-neon);
+  color: var(--text);
+}
+
+.about-card h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 16px;
+  text-shadow: 0 0 6px rgba(0, 255, 170, 0.4);
+}
+
+.about-card p {
+  margin-bottom: 14px;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+/* Кнопки */
+.about-buttons {
+  margin-top: 24px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.about-btn {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #0a0c0e;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.about-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px rgba(0, 255, 170, 0.5);
+}
+
+.about-btn.secondary {
+  background: #141518;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.about-btn.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
+}

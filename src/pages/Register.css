@@ -1,0 +1,181 @@
+/* src/pages/Register.css
+   Стиль: Last Island of Survival + адаптивность + отступы по краям
+*/
+
+:root {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+}
+
+/* Контейнер страницы */
+.register-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Отступы по краям */
+  padding: 16px;
+
+  overflow-x: hidden;
+
+  background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+  background-size: cover;
+  background-position: center;
+}
+
+/* Карточка формы */
+.register-card {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+
+  color: var(--text);
+  box-shadow: var(--shadow-neon);
+  backdrop-filter: blur(4px);
+}
+
+/* Заголовок */
+.register-title {
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(0, 255, 170, 0.5);
+}
+
+/* Метки */
+.register-label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+/* Поля ввода */
+.register-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin-bottom: 14px;
+
+  border: 1px solid #3a3f44;
+  border-radius: 8px;
+  background: #0f1113;
+  color: var(--text);
+  font-size: 14px;
+
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.register-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(0, 255, 170, 0.4);
+}
+
+/* Подсказка-изображение */
+.register-hint {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #2b2f33;
+  margin-bottom: 14px;
+}
+
+/* Чекбокс */
+.register-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #bbb;
+}
+
+.register-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* Кнопка */
+.register-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.register-button:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.6);
+}
+
+.register-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .register-card {
+    padding: 16px;
+  }
+  .register-title {
+    font-size: 22px;
+  }
+  .register-input {
+    font-size: 13px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .register-card {
+    padding: 14px;
+  }
+  .register-title {
+    font-size: 20px;
+  }
+}
+
+
+/* Стили для блока «Уже есть аккаунт?» */
+.register-login {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.register-login-link {
+  color: #646cff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.register-login-link:hover {
+  color: #535bf2;
+}

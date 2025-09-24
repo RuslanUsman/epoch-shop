@@ -1,0 +1,153 @@
+/* src/index.css */
+
+/* 1. Корневые переменные */
+:root {
+  /* типографика */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* цвета */
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  /* сглаживание шрифтов */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 2. Глобальный сброс */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 3. Убираем любые отступы у html и body */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 4. Базовые стили для body */
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--background-color, #242424);
+  color: var(--text, rgba(255, 255, 255, 0.87));
+  display: block; /* больше не флекс */
+}
+
+/* 5. Ссылки */
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: none;
+}
+a:hover {
+  color: #535bf2;
+}
+
+/* 6. Заголовки */
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+/* 7. Кнопки */
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* 8. Светлая тема */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+
+
+
+
+/* Базовые переменные (по умолчанию — system/dark) */
+:root {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --danger: #ff4d4d;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+}
+
+/* 🌞 Светлая тема */
+:root[data-theme="light"] {
+  --bg-dark-1: #f5f6f8;
+  --bg-dark-2: #ffffff;
+  --panel: #ffffff;
+  --line: #d0d4d9;
+  --accent: #0077ff;
+  --accent-2: #3399ff;
+  --text: #1a1c1f;
+  --muted: #555b61;
+  --danger: #d62828;
+  --shadow-neon: 0 0 12px rgba(0, 119, 255, 0.2);
+}
+
+/* 🌙 Тёмная тема */
+:root[data-theme="dark"] {
+  --bg-dark-1: #0e0f10;
+  --bg-dark-2: #17181a;
+  --panel: rgba(20, 21, 23, 0.95);
+  --line: #34383c;
+  --accent: #00ffaa;
+  --accent-2: #00cc88;
+  --text: #e8eaf0;
+  --muted: #9aa0a6;
+  --danger: #ff4d4d;
+  --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
+}
+
+/* 🖥️ Системная тема (автоматически подстраивается) */
+:root[data-theme="system"] {
+  color-scheme: light dark;
+}
+
+/* Дополнительно: плавный переход при смене темы */
+body, .store-page, .settings-page, .friends-page {
+  transition: background 0.3s ease, color 0.3s ease;
+}

@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/epoch-shop/sw.js', { scope: '/epoch-shop/' })})}

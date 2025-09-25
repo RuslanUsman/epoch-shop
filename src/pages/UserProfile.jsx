@@ -3,10 +3,10 @@ import React, { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { supabase } from "../lib/supabaseClient"
 import "./UserProfile.css"
-import { FaUserMinus, FaRegCommentDots, FaGift } from "react-icons/fa"
+import { FaUserMinus, FaUserPlus, FaRegCommentDots, FaGift, FaCrown } from "react-icons/fa"
 
 const UserProfile = () => {
-  const { id } = useParams() // id профиля, на который зашли
+  const { id } = useParams()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [giftPoints, setGiftPoints] = useState("")
@@ -21,7 +21,6 @@ const UserProfile = () => {
         return
       }
       if (user) {
-        // Берём профиль из таблицы profiles
         const { data, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -70,6 +69,7 @@ const UserProfile = () => {
     )
   }
 
+  // 🎁 Подарить баллы
   const handleGift = async () => {
     if (!giftPoints || isNaN(giftPoints)) return
     const pointsToGift = parseInt(giftPoints, 10)
@@ -84,7 +84,6 @@ const UserProfile = () => {
       return
     }
 
-    // 1. Списываем у отправителя
     const { error: senderError } = await supabase
       .from("profiles")
       .update({ points: currentUser.points - pointsToGift })
@@ -96,7 +95,6 @@ const UserProfile = () => {
       return
     }
 
-    // 2. Начисляем получателю
     const { error: receiverError } = await supabase
       .from("profiles")
       .update({ points: user.points + pointsToGift })
@@ -108,7 +106,6 @@ const UserProfile = () => {
       return
     }
 
-    // 3. Записываем транзакцию в point_transfers
     await supabase.from("point_transfers").insert([
       {
         from_user: currentUser.id,
@@ -118,7 +115,6 @@ const UserProfile = () => {
       }
     ])
 
-    // Обновляем локальное состояние
     setCurrentUser((prev) => ({
       ...prev,
       points: prev.points - pointsToGift
@@ -132,6 +128,48 @@ const UserProfile = () => {
     setGiftPoints("")
   }
 
+  // 👑 Выдать/снять VIP (только админ)
+  const toggleVip = async () => {
+    if (!currentUser?.is_admin) {
+      alert("Нет прав для изменения VIP")
+      return
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_vip: !user.is_vip })
+      .eq("id", user.id)
+
+    if (error) {
+      console.error(error)
+      alert("Ошибка при изменении VIP")
+      return
+    }
+
+    setUser((prev) => ({ ...prev, is_vip: !prev.is_vip }))
+  }
+
+  // 👥 Добавить/удалить из друзей
+  const handleFriend = async () => {
+    if (!currentUser) return
+
+    if (user.is_friend) {
+      // удалить из друзей
+      await supabase.from("friends").delete().match({
+        user_id: currentUser.id,
+        friend_id: user.id
+      })
+      setUser((prev) => ({ ...prev, is_friend: false }))
+    } else {
+      // отправить заявку
+      await supabase.from("friend_requests").insert({
+        from_id: currentUser.id,
+        to_id: user.id,
+        status: "pending"
+      })
+      alert("Заявка отправлена")
+    }
+  }
+
   return (
     <div className="userprofile-page">
       <div className="userprofile-card">
@@ -140,28 +178,28 @@ const UserProfile = () => {
             src={user.avatar_url || "/default-avatar.png"}
             alt={user.name}
             className="avatar"
-            style={{
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              marginBottom: "16px",
-              border: "2px solid var(--line)"
-            }}
           />
-          <h2 className="userprofile-name">{user.name}</h2>
+          <h2 className="userprofile-name">
+            {user.name} {user.is_vip && <FaCrown color="gold" />}
+          </h2>
           <p className="userprofile-username">@{user.telegram_name}</p>
           <p className="userprofile-points">
             Баллы: <span>{user.points}</span>
           </p>
 
           <div className="userprofile-actions">
-            <button className="btn-friend friends">
-              <FaUserMinus /> Удалить из друзей
+            <button className="btn-friend" onClick={handleFriend}>
+              {user.is_friend ? <FaUserMinus /> : <FaUserPlus />}
+              {user.is_friend ? "Удалить из друзей" : "Добавить в друзья"}
             </button>
             <button className="btn-message">
               <FaRegCommentDots /> Написать сообщение
             </button>
+            {currentUser?.is_admin && (
+              <button className="btn-vip" onClick={toggleVip}>
+                {user.is_vip ? "Снять VIP" : "Выдать VIP"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -176,7 +214,6 @@ const UserProfile = () => {
             placeholder="Количество"
           />
           <button onClick={handleGift}>Подарить</button>
-          <p>Баллы спишутся с вашего аккаунта и сразу начислятся этому пользователю.</p>
         </div>
       </div>
     </div>
@@ -184,3 +221,4 @@ const UserProfile = () => {
 }
 
 export default UserProfile
+

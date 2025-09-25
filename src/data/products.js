@@ -1,4 +1,3 @@
-// src/data/products.js
 export const CATEGORIES = [
   "ПВП Набор",
   "Броня",
@@ -18,6 +17,7 @@ export const PRODUCTS = {
       desc: "Базовый комплект для боя в PVP: броня, оружие и аптечки.",
       priceRub: 499,
       pricePoints: 500,
+      unlockHours: 3,   // доступно через 3 часа
     },
     {
       id: 2,
@@ -26,6 +26,7 @@ export const PRODUCTS = {
       desc: "Улучшенный комплект: шлем, кираса, меч с зачарованиями.",
       priceRub: 1299,
       pricePoints: 1300,
+      unlockHours: 12,  // доступно через 12 часов
     },
   ],
   "Броня": [
@@ -36,6 +37,7 @@ export const PRODUCTS = {
       desc: "Лёгкая броня из шкур зверей.",
       priceRub: 299,
       pricePoints: 300,
+      unlockHours: 30,  // доступно через 30 часов
     },
     {
       id: 4,
@@ -44,6 +46,7 @@ export const PRODUCTS = {
       desc: "Прочная броня из закалённого железа.",
       priceRub: 799,
       pricePoints: 800,
+      unlockHours: 48,  // доступно через 48 часов
     },
   ],
   "Оружия": [
@@ -54,6 +57,7 @@ export const PRODUCTS = {
       desc: "Стальной меч средней прочности.",
       priceRub: 199,
       pricePoints: 200,
+      unlockHours: 6,   // доступно через 6 часов
     },
     {
       id: 6,
@@ -62,6 +66,7 @@ export const PRODUCTS = {
       desc: "Деревянный лук с упругой тетивой.",
       priceRub: 249,
       pricePoints: 250,
+      unlockHours: 10,  // доступно через 10 часов
     },
   ],
   "Транспорт": [
@@ -72,6 +77,7 @@ export const PRODUCTS = {
       desc: "Небольшая гребная лодка.",
       priceRub: 1599,
       pricePoints: 1600,
+      unlockHours: 24,  // доступно через 24 часа
     },
     {
       id: 8,
@@ -80,6 +86,7 @@ export const PRODUCTS = {
       desc: "Внедорожный мотоцикл.",
       priceRub: 4999,
       pricePoints: 5000,
+      unlockHours: 72,  // доступно через 72 часа
     },
   ],
   "Ресурсы": [
@@ -90,6 +97,7 @@ export const PRODUCTS = {
       desc: "Материал для строительства.",
       priceRub: 99,
       pricePoints: 100,
+      unlockHours: 1,   // доступно через 1 час
     },
     {
       id: 10,
@@ -98,6 +106,7 @@ export const PRODUCTS = {
       desc: "Кирпичи для укреплений.",
       priceRub: 89,
       pricePoints: 90,
+      unlockHours: 2,   // доступно через 2 часа
     },
   ],
   "Компоненты": [
@@ -108,6 +117,7 @@ export const PRODUCTS = {
       desc: "Для смазки механизмов.",
       priceRub: 149,
       pricePoints: 150,
+      unlockHours: 3,   // доступно через 3 часа
     },
     {
       id: 12,
@@ -116,6 +126,7 @@ export const PRODUCTS = {
       desc: "Металлические зубчатые колёса.",
       priceRub: 199,
       pricePoints: 200,
+      unlockHours: 12,  // доступно через 12 часов
     },
   ],
   "Карточки": [
@@ -126,6 +137,7 @@ export const PRODUCTS = {
       desc: "Указывает место с сундуком.",
       priceRub: 399,
       pricePoints: 400,
+      unlockHours: 5,   // доступно через 5 часов
     },
     {
       id: 14,
@@ -134,6 +146,7 @@ export const PRODUCTS = {
       desc: "Создаёт временный портал.",
       priceRub: 599,
       pricePoints: 600,
+      unlockHours: 15,  // доступно через 15 часов
     },
   ],
 }

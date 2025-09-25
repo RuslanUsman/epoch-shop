@@ -1,7 +1,8 @@
 // src/pages/Store.jsx
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useCart } from "../context/CartContext"
 import { CATEGORIES, PRODUCTS } from "../data/products"
+import { supabase } from "../lib/supabaseClient"
 import "./Store.css"
 
 export default function Store() {
@@ -13,8 +14,47 @@ export default function Store() {
     togglePayWithPoints
   } = useCart()
 
+  // серверное состояние (старт сервера)
+  const [server, setServer] = useState(null)
+
+  // тикер для обновления таймера раз в секунду
+  const [nowTs, setNowTs] = useState(Date.now())
+
   // товары текущей категории
   const products = PRODUCTS[activeCat] || []
+
+  // Загружаем состояние сервера
+  useEffect(() => {
+    async function fetchServer() {
+      const { data } = await supabase
+        .from("server_state")
+        .select("*")
+        .eq("id", "main") // фиксированный id записи
+        .single()
+      if (data) setServer(data)
+      else setServer(null)
+    }
+    fetchServer()
+  }, [])
+
+  // Тикер: обновляет nowTs каждую секунду, чтобы таймеры на карточках тикали
+  useEffect(() => {
+    const interval = setInterval(() => setNowTs(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Функция расчёта времени ожидания для товара
+  function getProductTimeLeft(product) {
+    if (!server || !product.unlockHours) return ""
+    const start = new Date(server.start_time).getTime()
+    const unlockAt = start + product.unlockHours * 3600 * 1000
+    const diff = unlockAt - nowTs
+    if (diff <= 0) return ""
+    const h = Math.floor(diff / 1000 / 3600)
+    const m = Math.floor((diff / 1000 % 3600) / 60)
+    const s = Math.floor(diff / 1000 % 60)
+    return `${h}ч ${m}м ${s}с`
+  }
 
   return (
     <div className="store-page">
@@ -37,12 +77,16 @@ export default function Store() {
         {/* сетка товаров */}
         <div className="products-grid">
           {products.map(product => {
-            // ищем запись в корзине по id товара
+            // запись в корзине по id товара
             const entry =
               cartItems.find(e => e.item.id === product.id) || {
                 qty: 0,
                 payWithPoints: false
               }
+
+            // время ожидания для конкретного товара
+            const productTimeLeft = getProductTimeLeft(product)
+            const isLocked = !!productTimeLeft
 
             return (
               <div
@@ -71,12 +115,15 @@ export default function Store() {
                     type="checkbox"
                     checked={entry.payWithPoints}
                     onChange={() => togglePayWithPoints(product.id)}
+                    disabled={isLocked}
                   />
                   Оплатить баллами
                 </label>
 
                 <div className="qty-controls">
-                  {entry.qty > 0 ? (
+                  {isLocked ? (
+                    <p className="wait-text">⏳ Доступно через {productTimeLeft}</p>
+                  ) : entry.qty > 0 ? (
                     <>
                       <button
                         className="qty-btn"

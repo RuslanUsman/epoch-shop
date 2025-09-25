@@ -21,7 +21,9 @@ import Store from "./pages/Store"
 import Cart from "./pages/Cart"
 import Checkout from "./pages/Checkout"
 import About from "./pages/About"
-import Settings from "./pages/Settings"   // 👈 добавили импорт
+import Settings from "./pages/Settings"
+import AdminPanel from "./pages/AdminPanel"   // 👈 добавили
+import UsersList from "./pages/UsersList"     // 👈 добавили
 
 import { supabase } from "./lib/supabaseClient"
 
@@ -30,11 +32,35 @@ import { ActiveChatProvider } from "./context/ActiveChatContext"
 import { CartProvider } from "./context/CartContext"
 import { MessagesProvider } from "./context/MessagesContext"
 
+// 👇 компонент-защита для админки
+function AdminRoute({ children }) {
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      const { data } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single()
+      if (data?.is_admin) setIsAdmin(true)
+      setLoading(false)
+    }
+    check()
+  }, [])
+
+  if (loading) return <p>Загрузка...</p>
+  if (!isAdmin) return <Navigate to="/" replace />
+  return children
+}
+
 export default function App() {
   const [session, setSession] = useState(null)
 
   useEffect(() => {
-    // при старте проверяем сессию
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session || null)
       if (data.session?.user) {
@@ -42,7 +68,6 @@ export default function App() {
       }
     })
 
-    // подписка на изменения авторизации
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -57,7 +82,6 @@ export default function App() {
     }
   }, [])
 
-  // 👇 функция подтягивает тему из user_settings
   async function applyUserTheme(userId) {
     const { data } = await supabase
       .from("user_settings")
@@ -124,10 +148,27 @@ export default function App() {
                       element={session ? <Checkout /> : <Navigate to="/login" replace />}
                     />
 
-                    {/* 👇 Новый маршрут для страницы Настройки */}
                     <Route
                       path="/settings"
                       element={session ? <Settings /> : <Navigate to="/login" replace />}
+                    />
+
+                    {/* 👇 Админка */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <AdminRoute>
+                          <AdminPanel />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/users"
+                      element={
+                        <AdminRoute>
+                          <UsersList />
+                        </AdminRoute>
+                      }
                     />
                   </Routes>
                 </main>

@@ -1,8 +1,7 @@
-// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { FaUser, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { FaUser, FaSignOutAlt, FaCog, FaCrown } from "react-icons/fa";
 import "./Navbar.css";
 
 export default function Navbar({ session }) {
@@ -22,7 +21,7 @@ export default function Navbar({ session }) {
   async function fetchProfile(myId) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("telegram_name, avatar_url, points")
+      .select("telegram_name, avatar_url, points, is_admin") // 👈 добавили is_admin
       .eq("id", myId)
       .single();
 
@@ -36,18 +35,22 @@ export default function Navbar({ session }) {
     navigate("/register");
   };
 
-  // 👇 Логика скролла
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 30) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 30);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleProfileClick = () => {
+    if (profile?.is_admin) {
+      navigate("/admin");   // 👑 админ → админка
+    } else {
+      navigate("/profile"); // обычный → профиль
+    }
+    setDropdownOpen(false);
+  };
 
   return (
     <header className={`navbar ${scrolled ? "navbar-scrolled" : ""}`}>
@@ -57,7 +60,7 @@ export default function Navbar({ session }) {
           Эпоха выживания
         </Link>
 
-        {/* Только профиль */}
+        {/* Профиль */}
         {profile && (
           <div
             className="navbar-profile"
@@ -68,14 +71,19 @@ export default function Navbar({ session }) {
               alt="Аватар"
               className="navbar-avatar"
             />
-            <span className="navbar-name">{profile.telegram_name || "Без имени"}</span>
+            <span className="navbar-name">
+              {profile.telegram_name || "Без имени"}
+              {profile.is_admin && (
+                <FaCrown color="gold" style={{ marginLeft: 6 }} />
+              )}
+            </span>
             <span className="navbar-points">{profile.points ?? 0} 🪙</span>
 
             {dropdownOpen && (
               <div className="navbar-dropdown">
-                <Link to="/profile" className="dropdown-item">
-                  <FaUser /> Профиль
-                </Link>
+                <button onClick={handleProfileClick} className="dropdown-item">
+                  <FaUser /> {profile.is_admin ? "Админ‑панель" : "Профиль"}
+                </button>
                 <Link to="/settings" className="dropdown-item">
                   <FaCog /> Настройки
                 </Link>

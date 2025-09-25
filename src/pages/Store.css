@@ -12,6 +12,7 @@
   --muted: #9aa0a6;
   --shadow-neon: 0 0 25px rgba(0, 255, 170, 0.15);
   --danger: #ff4d4d;
+  --warning: #ffb347;
 }
 
 *,
@@ -142,6 +143,8 @@ body {
   border: 1px solid var(--accent);
   box-shadow: 0 0 15px rgba(0, 255, 170, 0.4);
 }
+
+
 /* 8. Изображение */
 .product-img {
   width: 100%;
@@ -260,13 +263,34 @@ body {
   line-height: 1;
 }
 
-/* 13. Анимации */
+
+
+/* 🔥 13. Таймер ожидания */
+.wait-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--warning);
+  text-align: center;
+  padding: 6px 8px;
+  border: 1px dashed var(--warning);
+  border-radius: 6px;
+  background: rgba(255, 179, 71, 0.1);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* 14. Анимации */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 14. Адаптив */
+/* 15. Адаптив */
 @media (max-width: 1024px) {
   .products-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

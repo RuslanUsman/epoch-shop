@@ -1,11 +1,11 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import "./Register.css"; // стили, включая .register-hint
+import telegramHint from "../assets/telegram_hint.png";
+import "./Register.css";
 
 export default function Login() {
-  const [tgName, setTgName] = useState(""); // без @
+  const [tgName, setTgName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -48,9 +48,8 @@ export default function Login() {
           onChange={(e) => setTgName(e.target.value)}
         />
 
-        {/* Хинт-картинка */}
         <img
-          src={`${import.meta.env.BASE_URL}telegram_hint.png`}
+          src={telegramHint}
           alt="Где найти Telegram-имя"
           className="register-hint"
         />

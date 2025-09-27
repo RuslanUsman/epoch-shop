@@ -1,9 +1,9 @@
-// src/pages/Cart.jsx
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useCart } from "../context/CartContext"
 import { CATEGORIES, PRODUCTS } from "../data/products"
 import { FaTrash } from "react-icons/fa"
+import { supabase } from "../lib/supabase"
 import "./Cart.css"
 
 export default function Cart() {
@@ -12,18 +12,37 @@ export default function Cart() {
     updateQty,
     removeFromCart,
     togglePayWithPoints,
-    totalRubles,
     totalPoints,
   } = useCart()
+
+  const [isVip, setIsVip] = useState(false)
+
+  useEffect(() => {
+    async function fetchVipStatus() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_vip")
+          .eq("id", user.id)
+          .single()
+
+        setIsVip(profile?.is_vip || false)
+      }
+    }
+
+    fetchVipStatus()
+  }, [])
 
   if (items.length === 0) {
     return (
       <div className="cart-page">
         <div className="cart-container empty">
           <h2>🛒 Ваша корзина пуста</h2>
-          <Link to="/store" className="empty-link">
-            Перейти в магазин
-          </Link>
+          <Link to="/store" className="empty-link">Перейти в магазин</Link>
         </div>
       </div>
     )
@@ -38,6 +57,14 @@ export default function Cart() {
     })
     .filter(section => section.items.length > 0)
 
+  const totalRublesRaw = items.reduce((sum, { item, qty, payWithPoints }) => {
+    const price = Number(item.priceRub) || 0
+    return payWithPoints ? sum : sum + price * qty
+  }, 0)
+
+  const totalRublesWithDiscount = isVip ? totalRublesRaw * 0.9 : totalRublesRaw
+  const discountAmount = isVip ? totalRublesRaw - totalRublesWithDiscount : 0
+
   return (
     <div className="cart-page">
       <div className="cart-container">
@@ -48,12 +75,16 @@ export default function Cart() {
             <h3 className="cart-section-title">{cat}</h3>
 
             {sectionItems.map(({ item, qty, payWithPoints }) => {
+              const baseRub = Number(item.priceRub) || 0
+              const basePts = Number(item.pricePoints) || 0
+
               const priceValue = payWithPoints
-                ? Number(item.pricePoints) * qty
-                : Number(item.priceRub) * qty
+                ? basePts * qty
+                : baseRub * qty
+
               const priceLabel = payWithPoints
-                ? `${priceValue || 0} 🪙`
-                : `${priceValue || 0} ₽`
+                ? `${priceValue} 🪙`
+                : `${priceValue} ₽`
 
               return (
                 <div key={item.id} className="cart-item">
@@ -94,12 +125,27 @@ export default function Cart() {
         ))}
 
         <div className="cart-totals">
-          {totalRubles > 0 && (
-            <div className="total-line">Итого (₽): {totalRubles} ₽</div>
+          <div
+            className="total-line"
+            title="Скидка применяется только к рублёвой оплате при оформлении заказа"
+          >
+            Итого (₽): {Math.round(totalRublesWithDiscount)} ₽
+            {isVip && (
+              <span className="vip-badge">🎉 VIP-цены применяются при оформлении</span>
+            )}
+          </div>
+
+          {isVip && discountAmount > 0 && (
+            <div className="total-line discount-line">
+              Вы сэкономили: {Math.round(discountAmount)} ₽
+            </div>
           )}
+
           {totalPoints > 0 && (
             <div className="total-line">Итого (🪙): {totalPoints} 🪙</div>
           )}
+
+          <Link to="/vip" className="vip-info-link">Узнать больше о VIP</Link>
         </div>
 
         <Link to="/checkout" className="checkout-btn">

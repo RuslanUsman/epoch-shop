@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect, useState } from "react"
 import {
   BrowserRouter as Router,
@@ -22,8 +21,9 @@ import Cart from "./pages/Cart"
 import Checkout from "./pages/Checkout"
 import About from "./pages/About"
 import Settings from "./pages/Settings"
-import AdminPanel from "./pages/AdminPanel"   // 👈 добавили
-import UsersList from "./pages/UsersList"     // 👈 добавили
+import AdminPanel from "./pages/AdminPanel"
+import UsersList from "./pages/UsersList"
+import VipInfo from "./pages/VipInfo" // 👈 добавили VIP-страницу
 
 import { supabase } from "./lib/supabaseClient"
 
@@ -146,6 +146,10 @@ export default function App() {
                     <Route
                       path="/checkout"
                       element={session ? <Checkout /> : <Navigate to="/login" replace />}
+                    />
+                    <Route
+                      path="/vip"
+                      element={session ? <VipInfo /> : <Navigate to="/login" replace />} // 👈 добавлено
                     />
 
                     <Route

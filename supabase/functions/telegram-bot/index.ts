@@ -17,17 +17,10 @@ serve(async (req) => {
     const parts  = data.split("_");
     const action = parts[0];
     const orderId = parts[1];
-    const buyerId = parts[2];
+    const buyerKey = parts[2]; // UUID (для заказов) или telegram_name (для VIP)
     const points  = action === "credit" ? parseInt(parts[3], 10) || 0 : 0;
 
-    if (action !== "take" && action !== "credit") {
-      await fetch(`${API}/answerCallbackQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: cbId })
-      });
-      return new Response("ok");
-    }
+    console.log("Callback:", { action, orderId, buyerKey });
 
     const kb = message?.reply_markup?.inline_keyboard;
     if (!kb) {
@@ -58,12 +51,10 @@ serve(async (req) => {
         })
       });
 
-      const { error: orderErr } = await supabase
+      await supabase
         .from("orders")
         .update({ taker_id: from.id, taker_username: adminName })
         .eq("id", orderId);
-
-      if (orderErr) console.error("Ошибка обновления заказа:", orderErr.message);
 
       await fetch(`${API}/answerCallbackQuery`, {
         method: "POST",
@@ -76,30 +67,17 @@ serve(async (req) => {
 
     // === CREDIT ===
     if (action === "credit") {
-      const { data: profileData, error: selectErr } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("points")
-        .eq("id", buyerId)
+        .eq("id", buyerKey)
         .single();
-
-      if (selectErr) console.error("Ошибка чтения профиля:", selectErr.message);
 
       const currentPoints = profileData?.points || 0;
       const newPoints     = currentPoints + points;
 
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .update({ points: newPoints })
-        .eq("id", buyerId);
-
-      if (profileErr) console.error("Ошибка начисления баллов профилю:", profileErr.message);
-
-      const { error: orderErr } = await supabase
-        .from("orders")
-        .update({ bonus_given: points })
-        .eq("id", orderId);
-
-      if (orderErr) console.error("Ошибка обновления бонуса в заказе:", orderErr.message);
+      await supabase.from("profiles").update({ points: newPoints }).eq("id", buyerKey);
+      await supabase.from("orders").update({ bonus_given: points }).eq("id", orderId);
 
       const creditLabel = { text: `✅ Начислено ${points} баллов`, callback_data: "none" };
 
@@ -121,6 +99,52 @@ serve(async (req) => {
 
       return new Response("ok");
     }
+
+    // === VIP ===
+    if (action === "vip") {
+      const adminName = from.username || from.first_name || "admin";
+      const telegramName = buyerKey; // теперь это telegram_name
+
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({ is_vip: true })
+        .eq("telegram_name", telegramName);
+
+      if (profileErr) {
+        console.error("Ошибка обновления VIP:", profileErr.message);
+        await fetch(`${API}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: cbId, text: "Ошибка при выдаче VIP" })
+        });
+        return new Response("ok");
+      }
+
+      const vipLabel = { text: `🌟 VIP выдал: @${adminName}`, callback_data: "none" };
+
+      await fetch(`${API}/editMessageReplyMarkup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: message.chat.id,
+          message_id: message.message_id,
+          reply_markup: {
+            inline_keyboard: [
+              [ { text: "Перейти в профиль", url: `https://t.me/${telegramName}` } ],
+              [ vipLabel ]
+            ]
+          }
+        })
+      });
+
+      await fetch(`${API}/answerCallbackQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: cbId, text: "VIP выдан" })
+      });
+
+      return new Response("ok");
+    }
   }
 
   // === /START ===
@@ -130,7 +154,7 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: update.message.chat.id,
-        text: "Привет! Я бот для управления заказами."
+        text: "Привет! Я бот для управления заказами и VIP-заявками."
       })
     });
   }

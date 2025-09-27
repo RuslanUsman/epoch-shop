@@ -72,3 +72,36 @@
     width: 100%;
   }
 }
+
+
+
+.vip-badge {
+  background-color: #ffeaa7;
+  color: #2d3436;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+
+
+
+.vip-badge {
+  background-color: #ffeaa7;
+  color: #2d3436;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.vip-info-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: #0984e3;
+  text-decoration: none;
+}

@@ -11,8 +11,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 👇 универсальный путь к картинке
+  // 👇 универсальный путь к картинке (как PUBLIC_URL в CRA)
   const imageUrl = `${import.meta.env.BASE_URL}images/telegram_hint.png`;
+  const fallbackUrl = `${import.meta.env.BASE_URL}images/default.jpg`;
 
   const handleRegister = async () => {
     if (!name || !tgName || !password || !agree) {
@@ -84,10 +85,15 @@ export default function Register() {
           value={tgName}
           onChange={(e) => setTgName(e.target.value)}
         />
+
         <img
           src={imageUrl}
           alt="Где найти Telegram-имя"
           className="register-hint"
+          onError={(e) => {
+            console.error(`Ошибка загрузки изображения: ${imageUrl}`);
+            e.currentTarget.src = fallbackUrl;
+          }}
         />
 
         <label className="register-label">Пароль</label>

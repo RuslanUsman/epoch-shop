@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -11,6 +10,9 @@ export default function Register() {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 👇 универсальный путь к картинке
+  const imageUrl = `${import.meta.env.BASE_URL}images/telegram_hint.png`;
 
   const handleRegister = async () => {
     if (!name || !tgName || !password || !agree) {
@@ -83,7 +85,7 @@ export default function Register() {
           onChange={(e) => setTgName(e.target.value)}
         />
         <img
-          src={`${import.meta.env.BASE_URL}telegram_hint.png`}
+          src={imageUrl}
           alt="Где найти Telegram-имя"
           className="register-hint"
         />

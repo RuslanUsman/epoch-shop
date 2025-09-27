@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import telegramHint from "../assets/telegram_hint.png";
 import "./Register.css";
 
 export default function Login() {
@@ -9,6 +8,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 👇 универсальный путь к картинке
+  const imageUrl = `${import.meta.env.BASE_URL}images/telegram_hint.png`;
 
   const handleLogin = async () => {
     if (!tgName || !password) {
@@ -49,7 +51,7 @@ export default function Login() {
         />
 
         <img
-          src={telegramHint}
+          src={imageUrl}
           alt="Где найти Telegram-имя"
           className="register-hint"
         />

@@ -276,3 +276,18 @@
   color: #00b894;
   font-weight: 500;
 }
+
+
+
+/* 🔫 Отображение выбранного оружия */
+.cart-option {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #e0e0e0;
+  background: #1e1e1e;           /* тёмный фон под общий стиль */
+  border-left: 3px solid #007bff; /* синий акцент */
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 500;
+}

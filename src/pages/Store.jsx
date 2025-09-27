@@ -36,6 +36,7 @@ export default function Store() {
     addToCart,
     updateQty,
     togglePayWithPoints,
+    updateOption, // 👈 добавим метод в CartContext
   } = useCart();
 
   // серверное состояние (старт сервера)
@@ -106,6 +107,7 @@ export default function Store() {
               cartItems.find((e) => e.item.id === product.id) || {
                 qty: 0,
                 payWithPoints: false,
+                selectedOption: null,
               };
 
             // время ожидания для конкретного товара
@@ -121,6 +123,28 @@ export default function Store() {
 
                 <h3 className="product-name">{product.name}</h3>
                 <p className="product-desc">{product.desc}</p>
+
+                {/* 👇 Блок выбора оружия, если есть options */}
+                {product.options && (
+                  <div className="product-options">
+                    <p>Выберите оружие:</p>
+                    {product.options.map((opt) => (
+                      <label key={opt.id} className="option-label">
+                        <input
+                          type="radio"
+                          name={`option-${product.id}`}
+                          value={opt.id}
+                          checked={entry.selectedOption === opt.id}
+                          onChange={() =>
+                            updateOption(product.id, opt.id)
+                          }
+                          disabled={isLocked}
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 <div className="price">
                   {!entry.payWithPoints && product.priceRub != null && (

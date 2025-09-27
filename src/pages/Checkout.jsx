@@ -1,3 +1,4 @@
+// src/pages/Checkout.jsx
 import React, { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useCart } from "../context/CartContext"
@@ -60,16 +61,25 @@ export default function Checkout() {
     const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
 
     const itemLines = items
-      .map(({ item, qty, payWithPoints }) => {
+      .map(({ item, qty, payWithPoints, selectedOption }) => {
         const priceRub = Number(item.priceRub) || 0
         const pricePts = Number(item.pricePoints) || 0
         const priceLabel = payWithPoints ? `${pricePts} 🪙` : `${priceRub} ₽`
+
+        // если выбрано оружие — найдём его название
+        const optionLabel =
+          selectedOption &&
+          item.options?.find(o => o.id === selectedOption)?.label
+
         return [
           `• ${item.name}`,
           `  Раздел: ${item.category}`,
           `  Описание: ${item.desc}`,
+          optionLabel ? `  🔫 Выбранное оружие: ${optionLabel}` : null,
           `  Цена: ${priceLabel} ×${qty}`,
-        ].join("\n")
+        ]
+          .filter(Boolean) // убираем пустые строки
+          .join("\n")
       })
       .join("\n\n")
 

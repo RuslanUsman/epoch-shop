@@ -1,3 +1,4 @@
+// src/pages/Cart.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -77,7 +78,7 @@ export default function Cart() {
   const sections = CATEGORIES
     .map((cat) => {
       const sectionItems = items.filter((e) =>
-        PRODUCTS[cat].some((p) => p.id === e.item.id)
+        (PRODUCTS[cat] || []).some((p) => p.id === e.item.id)
       );
       return { cat, items: sectionItems };
     })
@@ -100,15 +101,18 @@ export default function Cart() {
           <div key={cat} className="cart-section">
             <h3 className="cart-section-title">{cat}</h3>
 
-            {sectionItems.map(({ item, qty, payWithPoints }) => {
+            {sectionItems.map(({ item, qty, payWithPoints, selectedOption }) => {
               const baseRub = Number(item.priceRub) || 0;
               const basePts = Number(item.pricePoints) || 0;
 
               const priceValue = payWithPoints ? basePts * qty : baseRub * qty;
-
               const priceLabel = payWithPoints
                 ? `${priceValue} 🪙`
                 : `${priceValue} ₽`;
+
+              const optionLabel =
+                selectedOption &&
+                item.options?.find((o) => o.id === selectedOption)?.label;
 
               return (
                 <div key={item.id} className="cart-item">
@@ -116,6 +120,12 @@ export default function Cart() {
                   <div className="cart-info">
                     <h4>{item.name}</h4>
                     <p className="cart-desc">{item.desc}</p>
+
+                    {optionLabel && (
+                      <p className="cart-option">
+                        🔫 Выбранное оружие: <b>{optionLabel}</b>
+                      </p>
+                    )}
 
                     <div className="price">{priceLabel}</div>
 
@@ -170,12 +180,9 @@ export default function Cart() {
           {totalPoints > 0 && (
             <div className="total-line">Итого (🪙): {totalPoints} 🪙</div>
           )}
-
-          <Link to="/vip" className="vip-info-link">
-            Узнать больше о VIP
-          </Link>
         </div>
 
+        {/* 👉 Возвращаем переход на Checkout */}
         <Link to="/checkout" className="checkout-btn">
           Оформить заказ
         </Link>

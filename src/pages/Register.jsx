@@ -83,7 +83,7 @@ export default function Register() {
           onChange={(e) => setTgName(e.target.value)}
         />
         <img
-          src="/telegram_hint.png"
+          src={`${import.meta.env.BASE_URL}telegram_hint.png`}
           alt="Где найти Telegram-имя"
           className="register-hint"
         />
@@ -113,7 +113,6 @@ export default function Register() {
           {loading ? "Создаём..." : "Зарегистрироваться"}
         </button>
 
-        {/* Новая кнопка / ссылка для перехода на страницу входа */}
         <p className="register-login">
           Уже есть аккаунт?{" "}
           <Link to="/login" className="register-login-link">

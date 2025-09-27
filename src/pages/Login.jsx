@@ -50,7 +50,7 @@ export default function Login() {
 
         {/* Хинт-картинка */}
         <img
-          src="/telegram_hint.png"
+          src={`${import.meta.env.BASE_URL}telegram_hint.png`}
           alt="Где найти Telegram-имя"
           className="register-hint"
         />

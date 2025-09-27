@@ -1,35 +1,36 @@
 // src/pages/Friends.jsx
-import { useEffect, useState } from "react"
-import { supabase } from "../lib/supabaseClient"
-import UserCard from "../components/UserCard"
-import "./Friends.css"
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import UserCard from "../components/UserCard";
+import Avatar from "../components/Avatar"; // 👈 используем Avatar
+import "./Friends.css";
 
 export default function Friends() {
-  const [me, setMe] = useState(null)
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState([])
-  const [pending, setPending] = useState([])     // все заявки (входящие + исходящие)
-  const [myFriends, setMyFriends] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [me, setMe] = useState(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [pending, setPending] = useState([]); // все заявки (входящие + исходящие)
+  const [myFriends, setMyFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Получаем пользователя и настраиваем подписки
   useEffect(() => {
-    let channel = null
+    let channel = null;
 
-    ;(async () => {
+    (async () => {
       const {
         data: { user },
         error: authErr,
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
       if (authErr) {
-        console.error("Ошибка при получении пользователя:", authErr)
-        setLoading(false)
-        return
+        console.error("Ошибка при получении пользователя:", authErr);
+        setLoading(false);
+        return;
       }
-      setMe(user)
+      setMe(user);
 
       if (user) {
-        await refresh(user.id)
+        await refresh(user.id);
 
         // Подписка на изменения в friend_requests и friends
         channel = supabase
@@ -38,9 +39,9 @@ export default function Friends() {
             "postgres_changes",
             { event: "*", schema: "public", table: "friend_requests" },
             (payload) => {
-              const row = payload.eventType === "DELETE" ? payload.old : payload.new
+              const row = payload.eventType === "DELETE" ? payload.old : payload.new;
               if (row.sender_id === user.id || row.receiver_id === user.id) {
-                refresh(user.id)
+                refresh(user.id);
               }
             }
           )
@@ -48,26 +49,26 @@ export default function Friends() {
             "postgres_changes",
             { event: "*", schema: "public", table: "friends" },
             (payload) => {
-              const row = payload.eventType === "DELETE" ? payload.old : payload.new
+              const row = payload.eventType === "DELETE" ? payload.old : payload.new;
               if (row.user_a === user.id || row.user_b === user.id) {
-                refresh(user.id)
+                refresh(user.id);
               }
             }
           )
-          .subscribe()
+          .subscribe();
       } else {
-        setLoading(false)
+        setLoading(false);
       }
-    })()
+    })();
 
     return () => {
-      if (channel) supabase.removeChannel(channel)
-    }
-  }, [])
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Общий refresh: pending + myFriends
   async function refresh(uid) {
-    setLoading(true)
+    setLoading(true);
 
     const { data: pend, error: pendErr } = await supabase
       .from("friend_requests")
@@ -81,9 +82,9 @@ export default function Friends() {
       `)
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .eq("status", "pending")
-      .order("id", { ascending: false })
-    if (pendErr) console.error("Ошибка загрузки заявок:", pendErr)
-    setPending(pend || [])
+      .order("id", { ascending: false });
+    if (pendErr) console.error("Ошибка загрузки заявок:", pendErr);
+    setPending(pend || []);
 
     const { data: fr, error: frErr } = await supabase
       .from("friends")
@@ -93,44 +94,46 @@ export default function Friends() {
         a:user_a(id, name, telegram_name, avatar_url),
         b:user_b(id, name, telegram_name, avatar_url)
       `)
-      .or(`user_a.eq.${uid},user_b.eq.${uid}`)
-    if (frErr) console.error("Ошибка загрузки друзей:", frErr)
+      .or(`user_a.eq.${uid},user_b.eq.${uid}`);
+    if (frErr) console.error("Ошибка загрузки друзей:", frErr);
 
-    const normalized = (fr || []).map((r) => (r.user_a === uid ? r.b : r.a))
-    setMyFriends(normalized)
+    const normalized = (fr || []).map((r) => (r.user_a === uid ? r.b : r.a));
+    setMyFriends(normalized);
 
-    setLoading(false)
+    setLoading(false);
   }
-  // Поиск профилей
+
+
+    // Поиск профилей
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!query.trim()) {
-        setResults([])
+        setResults([]);
       } else {
-        search(query.trim())
+        search(query.trim());
       }
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [query])
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   async function search(text) {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, name, telegram_name, avatar_url")
       .or(`name.ilike.%${text}%,telegram_name.ilike.%${text}%`)
-      .limit(20)
+      .limit(20);
     if (error) {
-      console.error("Ошибка поиска:", error)
-      return
+      console.error("Ошибка поиска:", error);
+      return;
     }
-    setResults((data || []).filter((u) => u.id !== me?.id))
+    setResults((data || []).filter((u) => u.id !== me?.id));
   }
 
   // Отправка заявки
   async function addFriend(user) {
-    if (!me || !user.id) return
+    if (!me || !user.id) return;
 
-    setResults((r) => r.filter((u) => u.id !== user.id))
+    setResults((r) => r.filter((u) => u.id !== user.id));
     setPending((p) => [
       ...p,
       {
@@ -142,85 +145,87 @@ export default function Friends() {
         receiver: user,
         _optimistic: true,
       },
-    ])
+    ]);
 
     const { error } = await supabase
       .from("friend_requests")
       .upsert(
         { sender_id: me.id, receiver_id: user.id, status: "pending" },
         { onConflict: ["sender_id", "receiver_id"] }
-      )
+      );
     if (error) {
-      alert("Не удалось отправить заявку: " + error.message)
-      setPending((p) => p.filter((r) => r.id !== `temp-${user.id}`))
-      setResults((r) => [user, ...r])
-      console.error(error)
+      alert("Не удалось отправить заявку: " + error.message);
+      setPending((p) => p.filter((r) => r.id !== `temp-${user.id}`));
+      setResults((r) => [user, ...r]);
+      console.error(error);
     }
   }
 
   // Отмена заявки
   async function cancelRequest(reqId) {
-    setPending((p) => p.filter((r) => r.id !== reqId))
+    setPending((p) => p.filter((r) => r.id !== reqId));
 
-    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId)
+    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
     if (error) {
-      alert("Не удалось отменить заявку: " + error.message)
-      console.error(error)
-      await refresh(me.id)
+      alert("Не удалось отменить заявку: " + error.message);
+      console.error(error);
+      await refresh(me.id);
     }
   }
 
   // Принять заявку
   async function acceptRequest(req) {
-    setPending((p) => p.filter((r) => r.id !== req.id))
-    setMyFriends((f) => [...f, req.sender])
+    setPending((p) => p.filter((r) => r.id !== req.id));
+    setMyFriends((f) => [...f, req.sender]);
 
-    await supabase.from("friend_requests").update({ status: "accepted" }).eq("id", req.id)
+    await supabase.from("friend_requests").update({ status: "accepted" }).eq("id", req.id);
 
-    const [a, b] = [req.sender_id, req.receiver_id].sort()
-    await supabase.from("friends").insert({ user_a: a, user_b: b })
+    const [a, b] = [req.sender_id, req.receiver_id].sort();
+    await supabase.from("friends").insert({ user_a: a, user_b: b });
 
-    await refresh(me.id)
+    await refresh(me.id);
   }
 
   // Отклонить заявку
   async function declineRequest(reqId) {
-    setPending((p) => p.filter((r) => r.id !== reqId))
+    setPending((p) => p.filter((r) => r.id !== reqId));
 
-    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId)
+    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
     if (error) {
-      alert("Не удалось отклонить заявку: " + error.message)
-      console.error(error)
+      alert("Не удалось отклонить заявку: " + error.message);
+      console.error(error);
     }
-    await refresh(me.id)
+    await refresh(me.id);
   }
 
   // Удалить из друзей
   async function removeFriend(friendId) {
-    if (!me) return
+    if (!me) return;
 
-    setMyFriends((f) => f.filter((u) => u.id !== friendId))
+    setMyFriends((f) => f.filter((u) => u.id !== friendId));
 
-    const [a, b] = [me.id, friendId].sort()
-    const { error: errFriends } = await supabase.from("friends").delete().match({ user_a: a, user_b: b })
+    const [a, b] = [me.id, friendId].sort();
+    const { error: errFriends } = await supabase.from("friends").delete().match({ user_a: a, user_b: b });
     const { error: errReqs } = await supabase
       .from("friend_requests")
       .delete()
-      .or(`and(sender_id.eq.${me.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${me.id})`)
+      .or(`and(sender_id.eq.${me.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${me.id})`);
     if (errFriends || errReqs) {
-      alert("Не удалось полностью удалить дружбу: " + (errFriends?.message || errReqs?.message))
-      console.error(errFriends || errReqs)
+      alert("Не удалось полностью удалить дружбу: " + (errFriends?.message || errReqs?.message));
+      console.error(errFriends || errReqs);
     }
-    await refresh(me.id)
-  }
-  if (!me) {
-    return loading
-      ? <div className="p-6">Загрузка...</div>
-      : <div className="p-6">Авторизуйтесь, чтобы увидеть друзей</div>
+    await refresh(me.id);
   }
 
-  const incoming = pending.filter((r) => r.receiver_id === me.id)
-  const outgoing = pending.filter((r) => r.sender_id === me.id)
+
+    if (!me) {
+    return loading
+      ? <div className="p-6">Загрузка...</div>
+      : <div className="p-6">Авторизуйтесь, чтобы увидеть друзей</div>;
+  }
+
+  const incoming = pending.filter((r) => r.receiver_id === me.id);
+  const outgoing = pending.filter((r) => r.sender_id === me.id);
 
   return (
     <div className="friends-page">
@@ -237,7 +242,10 @@ export default function Friends() {
         </div>
         <div className="friends-grid">
           {results.map((u) => (
-            <UserCard key={u.id} user={u} onAdd={() => addFriend(u)} />
+            <div key={u.id} className="friend-card">
+              <Avatar src={u.avatar_url} size={64} /> {/* 👈 аватар */}
+              <UserCard user={u} onAdd={() => addFriend(u)} />
+            </div>
           ))}
         </div>
       </div>
@@ -248,6 +256,7 @@ export default function Friends() {
         {incoming.length === 0 && <div className="empty">Нет новых заявок</div>}
         {incoming.map((r) => (
           <div key={r.id} className="friend-request">
+            <Avatar src={r.sender.avatar_url} size={64} /> {/* 👈 аватар */}
             <UserCard user={r.sender} />
             <div className="actions">
               <button className="btn-accept" onClick={() => acceptRequest(r)}>
@@ -267,6 +276,7 @@ export default function Friends() {
         {outgoing.length === 0 && <div className="empty">Нет отправленных заявок</div>}
         {outgoing.map((r) => (
           <div key={r.id} className="friend-request">
+            <Avatar src={r.receiver.avatar_url} size={64} /> {/* 👈 аватар */}
             <UserCard user={r.receiver} />
             <div className="actions">
               <button className="btn-decline" onClick={() => cancelRequest(r.id)}>
@@ -285,6 +295,7 @@ export default function Friends() {
         <div className="friends-grid">
           {myFriends.map((u) => (
             <div key={u.id} className="friend-card">
+              <Avatar src={u.avatar_url} size={64} /> {/* 👈 аватар */}
               <UserCard user={u} isFriend />
               <button className="btn-remove" onClick={() => removeFriend(u.id)}>
                 Удалить из друзей
@@ -294,5 +305,5 @@ export default function Friends() {
         </div>
       </div>
     </div>
-  )
+  );
 }

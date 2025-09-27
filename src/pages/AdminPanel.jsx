@@ -1,153 +1,167 @@
 // src/pages/AdminPanel.jsx
-import { useEffect, useState } from "react"
-import { supabase } from "../lib/supabaseClient"
-import { useNavigate } from "react-router-dom"
-import { FaCrown, FaGem } from "react-icons/fa"
-import "./AdminPanel.css"
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
+import { FaCrown, FaGem } from "react-icons/fa";
+import Avatar from "../components/Avatar"; // 👈 используем универсальный Avatar
+import "./AdminPanel.css";
 
 export default function AdminPanel() {
-  const [profile, setProfile] = useState(null)
-  const [users, setUsers] = useState([])
-  const [allUsers, setAllUsers] = useState([])
-  const [search, setSearch] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [showUsers, setShowUsers] = useState(false)
+  const [profile, setProfile] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showUsers, setShowUsers] = useState(false);
 
   // 🔥 состояние для сервера
-  const [showModal, setShowModal] = useState(false)
-  const [wipeSeconds, setWipeSeconds] = useState("")
-  const [endTime, setEndTime] = useState(null)
-  const [timeLeft, setTimeLeft] = useState("")
+  const [showModal, setShowModal] = useState(false);
+  const [wipeSeconds, setWipeSeconds] = useState("");
+  const [endTime, setEndTime] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadAdmin()
-    fetchUsers()
-    fetchServerState()
-  }, [])
+    loadAdmin();
+    fetchUsers();
+    fetchServerState();
+  }, []);
 
   async function loadAdmin() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return navigate("/login")
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return navigate("/login");
 
     const { data, error } = await supabase
       .from("profiles")
       .select("id, name, telegram_name, avatar_url, is_admin")
       .eq("id", user.id)
-      .single()
+      .single();
 
-    if (!error) setProfile(data)
+    if (!error) setProfile(data);
   }
 
   async function fetchUsers() {
-    setLoading(true)
+    setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, name, telegram_name, avatar_url, is_vip, is_admin, points")
+      .select("id, name, telegram_name, avatar_url, is_vip, is_admin, points");
     if (!error) {
-      setUsers(data || [])
-      setAllUsers(data || [])
+      setUsers(data || []);
+      setAllUsers(data || []);
     }
-    setLoading(false)
+    setLoading(false);
   }
 
   async function toggleVip(u) {
     const { error } = await supabase
       .from("profiles")
       .update({ is_vip: !u.is_vip })
-      .eq("id", u.id)
+      .eq("id", u.id);
     if (!error) {
-      setUsers(prev => prev.map(p => p.id === u.id ? { ...p, is_vip: !p.is_vip } : p))
-      setAllUsers(prev => prev.map(p => p.id === u.id ? { ...p, is_vip: !p.is_vip } : p))
+      setUsers((prev) =>
+        prev.map((p) => (p.id === u.id ? { ...p, is_vip: !p.is_vip } : p))
+      );
+      setAllUsers((prev) =>
+        prev.map((p) => (p.id === u.id ? { ...p, is_vip: !p.is_vip } : p))
+      );
     }
   }
 
-  // 🔥 запуск сервера
+
+    // 🔥 запуск сервера
   async function startServer() {
-    const secs = parseInt(wipeSeconds, 10)
-    if (!secs || secs <= 0) return
-    const start = new Date()
-    const end = new Date(Date.now() + secs * 1000)
+    const secs = parseInt(wipeSeconds, 10);
+    if (!secs || secs <= 0) return;
+    const start = new Date();
+    const end = new Date(Date.now() + secs * 1000);
 
     await supabase
       .from("server_state")
-      .upsert({ id: "main", start_time: start.toISOString(), end_time: end.toISOString() })
+      .upsert({
+        id: "main",
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+      });
 
-    setEndTime(end.getTime())
-    setShowModal(false)
+    setEndTime(end.getTime());
+    setShowModal(false);
   }
 
   // 🔥 остановка сервера
   async function stopServer() {
-    await supabase.from("server_state").delete().eq("id", "main")
-    setEndTime(null)
-    setTimeLeft("")
-    setWipeSeconds("")
+    await supabase.from("server_state").delete().eq("id", "main");
+    setEndTime(null);
+    setTimeLeft("");
+    setWipeSeconds("");
   }
 
   // 🔥 загрузка состояния сервера при входе
   async function fetchServerState() {
-    const { data } = await supabase.from("server_state").select("*").eq("id", "main").single()
+    const { data } = await supabase
+      .from("server_state")
+      .select("*")
+      .eq("id", "main")
+      .single();
     if (data) {
-      setEndTime(new Date(data.end_time).getTime())
+      setEndTime(new Date(data.end_time).getTime());
     }
   }
 
-
-    // 🔥 обновление таймера
+  // 🔥 обновление таймера
   useEffect(() => {
-    if (!endTime) return
+    if (!endTime) return;
     const interval = setInterval(() => {
-      const diff = endTime - Date.now()
+      const diff = endTime - Date.now();
       if (diff <= 0) {
-        setTimeLeft("Вайп завершён")
-        clearInterval(interval)
+        setTimeLeft("Вайп завершён");
+        clearInterval(interval);
       } else {
-        const h = Math.floor(diff / 1000 / 3600)
-        const m = Math.floor((diff / 1000 % 3600) / 60)
-        const s = Math.floor(diff / 1000 % 60)
-        setTimeLeft(`${h}ч ${m}м ${s}с`)
+        const h = Math.floor(diff / 1000 / 3600);
+        const m = Math.floor((diff / 1000) % 3600 / 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${h}ч ${m}м ${s}с`);
       }
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [endTime])
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [endTime]);
 
   // Поиск «на лету»
   useEffect(() => {
     if (!search.trim()) {
-      setUsers(allUsers)
+      setUsers(allUsers);
     } else {
-      const q = search.toLowerCase()
+      const q = search.toLowerCase();
       setUsers(
         allUsers.filter(
-          u =>
+          (u) =>
             (u.name && u.name.toLowerCase().includes(q)) ||
             (u.telegram_name && u.telegram_name.toLowerCase().includes(q))
         )
-      )
+      );
     }
-  }, [search, allUsers])
+  }, [search, allUsers]);
 
-  const totalUsers = allUsers.length
-  const vipUsers = allUsers.filter(u => u.is_vip).length
+  const totalUsers = allUsers.length;
+  const vipUsers = allUsers.filter((u) => u.is_vip).length;
 
-  return (
+
+    return (
     <div className="admin-page">
       <div className="admin-card">
         <h1 className="admin-title">Админ‑панель</h1>
 
         {profile && (
           <div className="admin-profile">
-            <img
-              src={profile.avatar_url || "/images/avatar-placeholder.png"}
-              alt="avatar"
-              className="admin-avatar"
-            />
+            <Avatar src={profile.avatar_url} size={64} /> {/* 👈 заменили <img> */}
             <div className="admin-info">
               <h2 className="admin-name">
                 {profile.name || profile.telegram_name}
-                {profile.is_admin && <FaCrown color="gold" style={{ marginLeft: 6 }} />}
+                {profile.is_admin && (
+                  <FaCrown color="gold" style={{ marginLeft: 6 }} />
+                )}
               </h2>
               <p className="admin-username">@{profile.telegram_name}</p>
               <p className="admin-role">Администратор</p>
@@ -157,8 +171,12 @@ export default function AdminPanel() {
 
         {/* Счётчики пользователей */}
         <div className="users-stats">
-          <span>Всего пользователей: <b>{totalUsers}</b></span>
-          <span>из них VIP: <b>{vipUsers}</b></span>
+          <span>
+            Всего пользователей: <b>{totalUsers}</b>
+          </span>
+          <span>
+            из них VIP: <b>{vipUsers}</b>
+          </span>
         </div>
 
         {/* 🔥 Кнопки управления */}
@@ -168,14 +186,17 @@ export default function AdminPanel() {
               Закрыть сервер
             </button>
           ) : (
-            <button className="btn btn-danger" onClick={() => setShowModal(true)}>
+            <button
+              className="btn btn-danger"
+              onClick={() => setShowModal(true)}
+            >
               Запуск сервера
             </button>
           )}
 
           <button
             className="btn btn-primary"
-            onClick={() => setShowUsers(prev => !prev)}
+            onClick={() => setShowUsers((prev) => !prev)}
           >
             {showUsers ? "Скрыть пользователей" : "Показать пользователей"}
           </button>
@@ -187,7 +208,6 @@ export default function AdminPanel() {
             Сервер запущен. До конца вайпа: <b>{timeLeft}</b>
           </div>
         )}
-
 
         {/* Модалка */}
         {showModal && (
@@ -201,8 +221,15 @@ export default function AdminPanel() {
                 placeholder="Например: 10800 (3 часа)"
               />
               <div className="modal-actions">
-                <button className="btn btn-primary" onClick={startServer}>Подтвердить</button>
-                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Отмена</button>
+                <button className="btn btn-primary" onClick={startServer}>
+                  Подтвердить
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Отмена
+                </button>
               </div>
             </div>
           </div>
@@ -223,16 +250,14 @@ export default function AdminPanel() {
             <p className="profile-loading">Загрузка...</p>
           ) : (
             <div className="users-list">
-              {users.map(u => (
+              {users.map((u) => (
                 <div
                   key={u.id}
-                  className={`user-row ${u.is_admin ? "row-admin" : u.is_vip ? "row-vip" : ""}`}
+                  className={`user-row ${
+                    u.is_admin ? "row-admin" : u.is_vip ? "row-vip" : ""
+                  }`}
                 >
-                  <img
-                    src={u.avatar_url || "/images/avatar-placeholder.png"}
-                    alt="avatar"
-                    className="user-avatar"
-                  />
+                  <Avatar src={u.avatar_url} size={48} /> {/* 👈 заменили <img> */}
                   <div className="user-info">
                     <div className="user-name">
                       {u.name || "—"}
@@ -263,5 +288,5 @@ export default function AdminPanel() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,10 +1,34 @@
-import React, { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { useCart } from "../context/CartContext"
-import { CATEGORIES, PRODUCTS } from "../data/products"
-import { FaTrash } from "react-icons/fa"
-import { supabase } from "../lib/supabase"
-import "./Cart.css"
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { CATEGORIES, PRODUCTS } from "../data/products";
+import { FaTrash } from "react-icons/fa";
+import { supabase } from "../lib/supabase";
+import "./Cart.css";
+
+// 👇 Универсальный компонент для картинок в корзине
+function CartImage({ src, alt, size = 64 }) {
+  const defaultUrl = `${import.meta.env.BASE_URL}images/default-product.png`;
+
+  const finalSrc = src
+    ? src.startsWith("http")
+      ? src
+      : `${import.meta.env.BASE_URL}${src.replace(/^\//, "")}`
+    : defaultUrl;
+
+  return (
+    <img
+      src={finalSrc}
+      alt={alt || "Товар"}
+      className="cart-img"
+      style={{ width: size, height: size, objectFit: "contain" }}
+      onError={(e) => {
+        console.error(`Ошибка загрузки изображения: ${src}`);
+        e.currentTarget.src = defaultUrl;
+      }}
+    />
+  );
+}
 
 export default function Cart() {
   const {
@@ -13,57 +37,59 @@ export default function Cart() {
     removeFromCart,
     togglePayWithPoints,
     totalPoints,
-  } = useCart()
+  } = useCart();
 
-  const [isVip, setIsVip] = useState(false)
+  const [isVip, setIsVip] = useState(false);
 
   useEffect(() => {
     async function fetchVipStatus() {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
+      } = await supabase.auth.getUser();
 
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("is_vip")
           .eq("id", user.id)
-          .single()
+          .single();
 
-        setIsVip(profile?.is_vip || false)
+        setIsVip(profile?.is_vip || false);
       }
     }
 
-    fetchVipStatus()
-  }, [])
+    fetchVipStatus();
+  }, []);
 
   if (items.length === 0) {
     return (
       <div className="cart-page">
         <div className="cart-container empty">
           <h2>🛒 Ваша корзина пуста</h2>
-          <Link to="/store" className="empty-link">Перейти в магазин</Link>
+          <Link to="/store" className="empty-link">
+            Перейти в магазин
+          </Link>
         </div>
       </div>
-    )
+    );
   }
 
   const sections = CATEGORIES
-    .map(cat => {
-      const sectionItems = items.filter(e =>
-        PRODUCTS[cat].some(p => p.id === e.item.id)
-      )
-      return { cat, items: sectionItems }
+    .map((cat) => {
+      const sectionItems = items.filter((e) =>
+        PRODUCTS[cat].some((p) => p.id === e.item.id)
+      );
+      return { cat, items: sectionItems };
     })
-    .filter(section => section.items.length > 0)
+    .filter((section) => section.items.length > 0);
 
   const totalRublesRaw = items.reduce((sum, { item, qty, payWithPoints }) => {
-    const price = Number(item.priceRub) || 0
-    return payWithPoints ? sum : sum + price * qty
-  }, 0)
+    const price = Number(item.priceRub) || 0;
+    return payWithPoints ? sum : sum + price * qty;
+  }, 0);
 
-  const totalRublesWithDiscount = isVip ? totalRublesRaw * 0.9 : totalRublesRaw
-  const discountAmount = isVip ? totalRublesRaw - totalRublesWithDiscount : 0
+  const totalRublesWithDiscount = isVip ? totalRublesRaw * 0.9 : totalRublesRaw;
+  const discountAmount = isVip ? totalRublesRaw - totalRublesWithDiscount : 0;
 
   return (
     <div className="cart-page">
@@ -75,20 +101,18 @@ export default function Cart() {
             <h3 className="cart-section-title">{cat}</h3>
 
             {sectionItems.map(({ item, qty, payWithPoints }) => {
-              const baseRub = Number(item.priceRub) || 0
-              const basePts = Number(item.pricePoints) || 0
+              const baseRub = Number(item.priceRub) || 0;
+              const basePts = Number(item.pricePoints) || 0;
 
-              const priceValue = payWithPoints
-                ? basePts * qty
-                : baseRub * qty
+              const priceValue = payWithPoints ? basePts * qty : baseRub * qty;
 
               const priceLabel = payWithPoints
                 ? `${priceValue} 🪙`
-                : `${priceValue} ₽`
+                : `${priceValue} ₽`;
 
               return (
                 <div key={item.id} className="cart-item">
-                  <img src={item.img} alt={item.name} className="cart-img" />
+                  <CartImage src={item.img} alt={item.name} size={64} />
                   <div className="cart-info">
                     <h4>{item.name}</h4>
                     <p className="cart-desc">{item.desc}</p>
@@ -119,7 +143,7 @@ export default function Cart() {
                     </button>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         ))}
@@ -131,7 +155,9 @@ export default function Cart() {
           >
             Итого (₽): {Math.round(totalRublesWithDiscount)} ₽
             {isVip && (
-              <span className="vip-badge">🎉 VIP-цены применяются при оформлении</span>
+              <span className="vip-badge">
+                🎉 VIP-цены применяются при оформлении
+              </span>
             )}
           </div>
 
@@ -145,7 +171,9 @@ export default function Cart() {
             <div className="total-line">Итого (🪙): {totalPoints} 🪙</div>
           )}
 
-          <Link to="/vip" className="vip-info-link">Узнать больше о VIP</Link>
+          <Link to="/vip" className="vip-info-link">
+            Узнать больше о VIP
+          </Link>
         </div>
 
         <Link to="/checkout" className="checkout-btn">
@@ -153,5 +181,5 @@ export default function Cart() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

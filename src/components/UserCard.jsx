@@ -9,10 +9,18 @@ export default function UserCard({ user, onAdd, isFriend }) {
   const tgName = user?.telegram_name || "unknown";
   const avatarUrl = user?.avatar_url || null;
 
+  // 👇 Универсальная обработка пути
+  let finalAvatar = null;
+  if (avatarUrl) {
+    finalAvatar = avatarUrl.startsWith("http")
+      ? avatarUrl
+      : `${import.meta.env.BASE_URL}${avatarUrl}`;
+  }
+
   return (
     <div className="usercard">
       <div className="usercard-left">
-        <Avatar src={avatarUrl} size={48} />
+        <Avatar src={finalAvatar} size={48} />
         <div className="usercard-info">
           <div className="usercard-name">{name}</div>
           <div className="usercard-tg">@{tgName}</div>
@@ -41,4 +49,3 @@ export default function UserCard({ user, onAdd, isFriend }) {
     </div>
   );
 }
-

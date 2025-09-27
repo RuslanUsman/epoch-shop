@@ -1,36 +1,46 @@
 // src/pages/UserProfile.jsx
-import React, { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import { supabase } from "../lib/supabaseClient"
-import "./UserProfile.css"
-import { FaUserMinus, FaUserPlus, FaRegCommentDots, FaGift, FaCrown } from "react-icons/fa"
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import "./UserProfile.css";
+import {
+  FaUserMinus,
+  FaUserPlus,
+  FaRegCommentDots,
+  FaGift,
+  FaCrown,
+} from "react-icons/fa";
+import Avatar from "../components/Avatar"; // 👈 используем универсальный Avatar
 
 const UserProfile = () => {
-  const { id } = useParams()
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [giftPoints, setGiftPoints] = useState("")
-  const [currentUser, setCurrentUser] = useState(null)
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [giftPoints, setGiftPoints] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Загружаем текущего авторизованного пользователя
   useEffect(() => {
     const fetchCurrentUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       if (error) {
-        console.error(error)
-        return
+        console.error(error);
+        return;
       }
       if (user) {
         const { data, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single()
-        if (!profileError) setCurrentUser(data)
+          .single();
+        if (!profileError) setCurrentUser(data);
       }
-    }
-    fetchCurrentUser()
-  }, [])
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Загружаем профиль того, на кого зашли
   useEffect(() => {
@@ -39,26 +49,26 @@ const UserProfile = () => {
         .from("profiles")
         .select("*")
         .eq("id", id)
-        .single()
+        .single();
 
       if (error) {
-        console.error(error)
-        setUser(null)
+        console.error(error);
+        setUser(null);
       } else {
-        setUser(data)
+        setUser(data);
       }
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    fetchUser()
-  }, [id])
+    fetchUser();
+  }, [id]);
 
   if (loading) {
     return (
       <div className="userprofile-page">
         <div className="spinner"></div>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -66,44 +76,44 @@ const UserProfile = () => {
       <div className="userprofile-page">
         <div className="user-not-found">Пользователь не найден</div>
       </div>
-    )
+    );
   }
 
   // 🎁 Подарить баллы
   const handleGift = async () => {
-    if (!giftPoints || isNaN(giftPoints)) return
-    const pointsToGift = parseInt(giftPoints, 10)
+    if (!giftPoints || isNaN(giftPoints)) return;
+    const pointsToGift = parseInt(giftPoints, 10);
 
     if (!currentUser) {
-      alert("Сначала войдите в систему")
-      return
+      alert("Сначала войдите в систему");
+      return;
     }
 
     if (currentUser.points < pointsToGift) {
-      alert("Недостаточно баллов для перевода")
-      return
+      alert("Недостаточно баллов для перевода");
+      return;
     }
 
     const { error: senderError } = await supabase
       .from("profiles")
       .update({ points: currentUser.points - pointsToGift })
-      .eq("id", currentUser.id)
+      .eq("id", currentUser.id);
 
     if (senderError) {
-      console.error(senderError)
-      alert("Ошибка при списании баллов")
-      return
+      console.error(senderError);
+      alert("Ошибка при списании баллов");
+      return;
     }
 
     const { error: receiverError } = await supabase
       .from("profiles")
       .update({ points: user.points + pointsToGift })
-      .eq("id", user.id)
+      .eq("id", user.id);
 
     if (receiverError) {
-      console.error(receiverError)
-      alert("Ошибка при начислении баллов")
-      return
+      console.error(receiverError);
+      alert("Ошибка при начислении баллов");
+      return;
     }
 
     await supabase.from("point_transfers").insert([
@@ -111,74 +121,70 @@ const UserProfile = () => {
         from_user: currentUser.id,
         to_user: user.id,
         amount: pointsToGift,
-        created_at: new Date()
-      }
-    ])
+        created_at: new Date(),
+      },
+    ]);
 
     setCurrentUser((prev) => ({
       ...prev,
-      points: prev.points - pointsToGift
-    }))
+      points: prev.points - pointsToGift,
+    }));
     setUser((prev) => ({
       ...prev,
-      points: prev.points + pointsToGift
-    }))
+      points: prev.points + pointsToGift,
+    }));
 
-    alert(`Вы подарили ${pointsToGift} баллов пользователю ${user.name}`)
-    setGiftPoints("")
-  }
+    alert(`Вы подарили ${pointsToGift} баллов пользователю ${user.name}`);
+    setGiftPoints("");
+  };
 
   // 👑 Выдать/снять VIP (только админ)
   const toggleVip = async () => {
     if (!currentUser?.is_admin) {
-      alert("Нет прав для изменения VIP")
-      return
+      alert("Нет прав для изменения VIP");
+      return;
     }
     const { error } = await supabase
       .from("profiles")
       .update({ is_vip: !user.is_vip })
-      .eq("id", user.id)
+      .eq("id", user.id);
 
     if (error) {
-      console.error(error)
-      alert("Ошибка при изменении VIP")
-      return
+      console.error(error);
+      alert("Ошибка при изменении VIP");
+      return;
     }
 
-    setUser((prev) => ({ ...prev, is_vip: !prev.is_vip }))
-  }
+    setUser((prev) => ({ ...prev, is_vip: !prev.is_vip }));
+  };
 
   // 👥 Добавить/удалить из друзей
   const handleFriend = async () => {
-    if (!currentUser) return
+    if (!currentUser) return;
 
     if (user.is_friend) {
       // удалить из друзей
       await supabase.from("friends").delete().match({
         user_id: currentUser.id,
-        friend_id: user.id
-      })
-      setUser((prev) => ({ ...prev, is_friend: false }))
+        friend_id: user.id,
+      });
+      setUser((prev) => ({ ...prev, is_friend: false }));
     } else {
       // отправить заявку
       await supabase.from("friend_requests").insert({
         from_id: currentUser.id,
         to_id: user.id,
-        status: "pending"
-      })
-      alert("Заявка отправлена")
+        status: "pending",
+      });
+      alert("Заявка отправлена");
     }
-  }
+  };
 
   return (
     <div className="userprofile-page">
       <div className="userprofile-card">
         <div className="userprofile-info">
-          <img
-            src={user.avatar_url || "/default-avatar.png"}
-            alt={user.name}
-            className="avatar"
-          />
+          <Avatar src={user.avatar_url} size={128} /> {/* 👈 заменили <img> */}
           <h2 className="userprofile-name">
             {user.name} {user.is_vip && <FaCrown color="gold" />}
           </h2>
@@ -217,8 +223,9 @@ const UserProfile = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UserProfile
+export default UserProfile;
+
 

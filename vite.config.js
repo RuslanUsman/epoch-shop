@@ -23,12 +23,12 @@ export default defineConfig({
         theme_color: "#000000",
         icons: [
           {
-            src: `${import.meta.env.BASE_URL}icons/icon-192.png`, // 👈 динамический путь
+            src: "/epoch-shop/icons/icon-192.png", // 👈 фиксированный путь
             sizes: "192x192",
             type: "image/png"
           },
           {
-            src: `${import.meta.env.BASE_URL}icons/icon-512.png`, // 👈 динамический путь
+            src: "/epoch-shop/icons/icon-512.png", // 👈 фиксированный путь
             sizes: "512x512",
             type: "image/png"
           }
@@ -40,4 +40,3 @@ export default defineConfig({
     outDir: "docs" // ⚡ билд в docs/, откуда GitHub Pages раздаёт сайт
   }
 });
-

@@ -1,6 +1,6 @@
 // src/pages/UserProfile.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import "./UserProfile.css";
 import {
@@ -10,10 +10,11 @@ import {
   FaGift,
   FaCrown,
 } from "react-icons/fa";
-import Avatar from "../components/Avatar"; // 👈 используем универсальный Avatar
+import Avatar from "../components/Avatar";
 
 const UserProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [giftPoints, setGiftPoints] = useState("");
@@ -22,12 +23,9 @@ const UserProfile = () => {
   // Загружаем текущего авторизованного пользователя
   useEffect(() => {
     const fetchCurrentUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
-        console.error(error);
+        console.error("Ошибка получения текущего пользователя:", error.message);
         return;
       }
       if (user) {
@@ -36,7 +34,7 @@ const UserProfile = () => {
           .select("*")
           .eq("id", user.id)
           .single();
-        if (!profileError) setCurrentUser(data);
+        if (!profileError && data) setCurrentUser(data);
       }
     };
     fetchCurrentUser();
@@ -52,34 +50,16 @@ const UserProfile = () => {
         .single();
 
       if (error) {
-        console.error(error);
+        console.error("Ошибка загрузки профиля:", error.message);
         setUser(null);
       } else {
         setUser(data);
       }
       setLoading(false);
     };
-
     fetchUser();
   }, [id]);
-
-  if (loading) {
-    return (
-      <div className="userprofile-page">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="userprofile-page">
-        <div className="user-not-found">Пользователь не найден</div>
-      </div>
-    );
-  }
-
-  // 🎁 Подарить баллы
+    // 🎁 Подарить баллы
   const handleGift = async () => {
     if (!giftPoints || isNaN(giftPoints)) return;
     const pointsToGift = parseInt(giftPoints, 10);
@@ -89,30 +69,28 @@ const UserProfile = () => {
       return;
     }
 
-    if (currentUser.points < pointsToGift) {
+    if ((currentUser?.points ?? 0) < pointsToGift) {
       alert("Недостаточно баллов для перевода");
       return;
     }
 
     const { error: senderError } = await supabase
       .from("profiles")
-      .update({ points: currentUser.points - pointsToGift })
+      .update({ points: (currentUser?.points ?? 0) - pointsToGift })
       .eq("id", currentUser.id);
 
     if (senderError) {
-      console.error(senderError);
-      alert("Ошибка при списании баллов");
+      console.error("Ошибка при списании баллов:", senderError.message);
       return;
     }
 
     const { error: receiverError } = await supabase
       .from("profiles")
-      .update({ points: user.points + pointsToGift })
+      .update({ points: (user?.points ?? 0) + pointsToGift })
       .eq("id", user.id);
 
     if (receiverError) {
-      console.error(receiverError);
-      alert("Ошибка при начислении баллов");
+      console.error("Ошибка при начислении баллов:", receiverError.message);
       return;
     }
 
@@ -125,16 +103,10 @@ const UserProfile = () => {
       },
     ]);
 
-    setCurrentUser((prev) => ({
-      ...prev,
-      points: prev.points - pointsToGift,
-    }));
-    setUser((prev) => ({
-      ...prev,
-      points: prev.points + pointsToGift,
-    }));
+    setCurrentUser((prev) => ({ ...prev, points: (prev?.points ?? 0) - pointsToGift }));
+    setUser((prev) => ({ ...prev, points: (prev?.points ?? 0) + pointsToGift }));
 
-    alert(`Вы подарили ${pointsToGift} баллов пользователю ${user.name}`);
+    alert(`Вы подарили ${pointsToGift} баллов пользователю ${user?.name ?? ""}`);
     setGiftPoints("");
   };
 
@@ -146,31 +118,33 @@ const UserProfile = () => {
     }
     const { error } = await supabase
       .from("profiles")
-      .update({ is_vip: !user.is_vip })
+      .update({ is_vip: !user?.is_vip })
       .eq("id", user.id);
 
     if (error) {
-      console.error(error);
-      alert("Ошибка при изменении VIP");
+      console.error("Ошибка при изменении VIP:", error.message);
       return;
     }
 
-    setUser((prev) => ({ ...prev, is_vip: !prev.is_vip }));
+    setUser((prev) => ({ ...prev, is_vip: !prev?.is_vip }));
   };
 
   // 👥 Добавить/удалить из друзей
   const handleFriend = async () => {
     if (!currentUser) return;
 
-    if (user.is_friend) {
-      // удалить из друзей
-      await supabase.from("friends").delete().match({
-        user_id: currentUser.id,
-        friend_id: user.id,
-      });
+    if (user?.is_friend) {
+      // Удаляем из друзей
+      await supabase
+        .from("friends")
+        .delete()
+        .or(
+          `and(user_id.eq.${currentUser.id},friend_id.eq.${user.id}),and(user_id.eq.${user.id},friend_id.eq.${currentUser.id})`
+        );
       setUser((prev) => ({ ...prev, is_friend: false }));
+      alert("Пользователь удалён из друзей");
     } else {
-      // отправить заявку
+      // Отправляем заявку
       await supabase.from("friend_requests").insert({
         from_id: currentUser.id,
         to_id: user.id,
@@ -180,36 +154,109 @@ const UserProfile = () => {
     }
   };
 
+  // 🔔 Подписка на изменения в friends
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel("friends-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "friends" },
+        (payload) => {
+          const { new: newRow, old: oldRow } = payload || {};
+
+          const affected =
+            (newRow?.user_id === currentUser.id && newRow?.friend_id === id) ||
+            (newRow?.friend_id === currentUser.id && newRow?.user_id === id) ||
+            (oldRow?.user_id === currentUser.id && oldRow?.friend_id === id) ||
+            (oldRow?.friend_id === currentUser.id && oldRow?.user_id === id);
+
+          if (affected) {
+            if (payload.eventType === "INSERT") {
+              setUser((prev) => ({ ...prev, is_friend: true }));
+            } else if (payload.eventType === "DELETE") {
+              setUser((prev) => ({ ...prev, is_friend: false }));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, id]);
+    // 💬 Написать сообщение
+  const handleMessage = async () => {
+    if (!currentUser) {
+      alert("Сначала войдите в систему");
+      return;
+    }
+
+    const { data: existingDialog, error: findError } = await supabase
+      .from("dialogs")
+      .select("*")
+      .or(
+        `and(user1.eq.${currentUser.id},user2.eq.${user.id}),and(user1.eq.${user.id},user2.eq.${currentUser.id})`
+      )
+      .maybeSingle();
+
+    if (findError) {
+      console.error("Ошибка поиска диалога:", findError.message);
+    }
+
+    let dialogId = existingDialog?.id;
+
+    if (!dialogId) {
+      const { data: newDialog, error: createError } = await supabase
+        .from("dialogs")
+        .insert([{ user1: currentUser.id, user2: user.id }])
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Ошибка при создании диалога:", createError.message);
+        alert("Не удалось создать диалог");
+        return;
+      }
+      dialogId = newDialog.id;
+    }
+
+    navigate(`/messages/${dialogId}`);
+  };
+
   return (
     <div className="userprofile-page">
       <div className="userprofile-card">
         <div className="userprofile-info">
-          <Avatar src={user.avatar_url} size={128} /> {/* 👈 заменили <img> */}
+          <Avatar src={user?.avatar_url} size={128} />
           <h2 className="userprofile-name">
-            {user.name} {user.is_vip && <FaCrown color="gold" />}
+            {user?.name} {user?.is_vip && <FaCrown color="gold" />}
           </h2>
-          <p className="userprofile-username">@{user.telegram_name}</p>
+          <p className="userprofile-username">@{user?.telegram_name}</p>
           <p className="userprofile-points">
-            Баллы: <span>{user.points}</span>
+            Баллы: <span>{user?.points ?? 0}</span>
           </p>
 
           <div className="userprofile-actions">
             <button className="btn-friend" onClick={handleFriend}>
-              {user.is_friend ? <FaUserMinus /> : <FaUserPlus />}
-              {user.is_friend ? "Удалить из друзей" : "Добавить в друзья"}
+              {user?.is_friend ? <FaUserMinus /> : <FaUserPlus />}
+              {user?.is_friend ? "Удалить из друзей" : "Добавить в друзья"}
             </button>
-            <button className="btn-message">
+
+            <button className="btn-message" onClick={handleMessage}>
               <FaRegCommentDots /> Написать сообщение
             </button>
+
             {currentUser?.is_admin && (
               <button className="btn-vip" onClick={toggleVip}>
-                {user.is_vip ? "Снять VIP" : "Выдать VIP"}
+                {user?.is_vip ? "Снять VIP" : "Выдать VIP"}
               </button>
             )}
           </div>
         </div>
-
-        <div className="userprofile-gift">
+                <div className="userprofile-gift">
           <h3>
             <FaGift /> Подарить баллы
           </h3>
@@ -227,5 +274,8 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+
+
+
 
 

@@ -1,19 +1,18 @@
 // src/pages/Friends.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import UserCard from "../components/UserCard";
-import Avatar from "../components/Avatar"; // 👈 используем Avatar
+import Avatar from "../components/Avatar";
 import "./Friends.css";
 
 export default function Friends() {
   const [me, setMe] = useState(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
-  const [pending, setPending] = useState([]); // все заявки (входящие + исходящие)
+  const [pending, setPending] = useState([]); 
   const [myFriends, setMyFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Получаем пользователя и настраиваем подписки
+  // Получаем пользователя и подписки
   useEffect(() => {
     let channel = null;
 
@@ -32,7 +31,6 @@ export default function Friends() {
       if (user) {
         await refresh(user.id);
 
-        // Подписка на изменения в friend_requests и friends
         channel = supabase
           .channel("friends_rt")
           .on(
@@ -66,11 +64,11 @@ export default function Friends() {
     };
   }, []);
 
-  // Общий refresh: pending + myFriends
+  // Обновление pending + myFriends
   async function refresh(uid) {
     setLoading(true);
 
-    const { data: pend, error: pendErr } = await supabase
+    const { data: pend } = await supabase
       .from("friend_requests")
       .select(`
         id,
@@ -83,10 +81,9 @@ export default function Friends() {
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .eq("status", "pending")
       .order("id", { ascending: false });
-    if (pendErr) console.error("Ошибка загрузки заявок:", pendErr);
     setPending(pend || []);
 
-    const { data: fr, error: frErr } = await supabase
+    const { data: fr } = await supabase
       .from("friends")
       .select(`
         user_a,
@@ -95,16 +92,13 @@ export default function Friends() {
         b:user_b(id, name, telegram_name, avatar_url)
       `)
       .or(`user_a.eq.${uid},user_b.eq.${uid}`);
-    if (frErr) console.error("Ошибка загрузки друзей:", frErr);
 
     const normalized = (fr || []).map((r) => (r.user_a === uid ? r.b : r.a));
     setMyFriends(normalized);
 
     setLoading(false);
   }
-
-
-    // Поиск профилей
+  // Поиск профилей
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!query.trim()) {
@@ -133,7 +127,6 @@ export default function Friends() {
   async function addFriend(user) {
     if (!me || !user.id) return;
 
-    setResults((r) => r.filter((u) => u.id !== user.id));
     setPending((p) => [
       ...p,
       {
@@ -156,7 +149,6 @@ export default function Friends() {
     if (error) {
       alert("Не удалось отправить заявку: " + error.message);
       setPending((p) => p.filter((r) => r.id !== `temp-${user.id}`));
-      setResults((r) => [user, ...r]);
       console.error(error);
     }
   }
@@ -164,7 +156,6 @@ export default function Friends() {
   // Отмена заявки
   async function cancelRequest(reqId) {
     setPending((p) => p.filter((r) => r.id !== reqId));
-
     const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
     if (error) {
       alert("Не удалось отменить заявку: " + error.message);
@@ -189,7 +180,6 @@ export default function Friends() {
   // Отклонить заявку
   async function declineRequest(reqId) {
     setPending((p) => p.filter((r) => r.id !== reqId));
-
     const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
     if (error) {
       alert("Не удалось отклонить заявку: " + error.message);
@@ -205,20 +195,15 @@ export default function Friends() {
     setMyFriends((f) => f.filter((u) => u.id !== friendId));
 
     const [a, b] = [me.id, friendId].sort();
-    const { error: errFriends } = await supabase.from("friends").delete().match({ user_a: a, user_b: b });
-    const { error: errReqs } = await supabase
+    await supabase.from("friends").delete().match({ user_a: a, user_b: b });
+    await supabase
       .from("friend_requests")
       .delete()
       .or(`and(sender_id.eq.${me.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${me.id})`);
-    if (errFriends || errReqs) {
-      alert("Не удалось полностью удалить дружбу: " + (errFriends?.message || errReqs?.message));
-      console.error(errFriends || errReqs);
-    }
+
     await refresh(me.id);
   }
-
-
-    if (!me) {
+  if (!me) {
     return loading
       ? <div className="p-6">Загрузка...</div>
       : <div className="p-6">Авторизуйтесь, чтобы увидеть друзей</div>;
@@ -241,12 +226,32 @@ export default function Friends() {
           <button onClick={() => search(query)}>Найти</button>
         </div>
         <div className="friends-grid">
-          {results.map((u) => (
-            <div key={u.id} className="friend-card">
-              <Avatar src={u.avatar_url} size={64} /> {/* 👈 аватар */}
-              <UserCard user={u} onAdd={() => addFriend(u)} />
-            </div>
-          ))}
+          {results.map((u) => {
+            const isFriend = myFriends.some(f => f.id === u.id);
+            return (
+              <div key={u.id} className="friend-row">
+                <Avatar src={u.avatar_url} size={48} />
+                <div className="info">
+                  <div className="name">{u.name}</div>
+                  <div className="tg">@{u.telegram_name}</div>
+                </div>
+                <div className="actions">
+                  <button onClick={() => window.location.href = `/user/${u.id}`}>
+                    Профиль
+                  </button>
+                  {isFriend ? (
+                    <button className="btn-remove" onClick={() => removeFriend(u.id)}>
+                      Удалить из друзей
+                    </button>
+                  ) : (
+                    <button className="btn-add" onClick={() => addFriend(u)}>
+                      Добавить в друзья
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -255,9 +260,12 @@ export default function Friends() {
         <h2>Входящие заявки</h2>
         {incoming.length === 0 && <div className="empty">Нет новых заявок</div>}
         {incoming.map((r) => (
-          <div key={r.id} className="friend-request">
-            <Avatar src={r.sender.avatar_url} size={64} /> {/* 👈 аватар */}
-            <UserCard user={r.sender} />
+          <div key={r.id} className="friend-row">
+            <Avatar src={r.sender.avatar_url} size={48} />
+            <div className="info">
+              <div className="name">{r.sender.name}</div>
+              <div className="tg">@{r.sender.telegram_name}</div>
+            </div>
             <div className="actions">
               <button className="btn-accept" onClick={() => acceptRequest(r)}>
                 Принять
@@ -269,15 +277,17 @@ export default function Friends() {
           </div>
         ))}
       </div>
-
-      {/* Исходящие заявки */}
+            {/* Исходящие заявки */}
       <div className="friends-section">
         <h2>Исходящие заявки</h2>
         {outgoing.length === 0 && <div className="empty">Нет отправленных заявок</div>}
         {outgoing.map((r) => (
-          <div key={r.id} className="friend-request">
-            <Avatar src={r.receiver.avatar_url} size={64} /> {/* 👈 аватар */}
-            <UserCard user={r.receiver} />
+          <div key={r.id} className="friend-row">
+            <Avatar src={r.receiver.avatar_url} size={48} />
+            <div className="info">
+              <div className="name">{r.receiver.name}</div>
+              <div className="tg">@{r.receiver.telegram_name}</div>
+            </div>
             <div className="actions">
               <button className="btn-decline" onClick={() => cancelRequest(r.id)}>
                 Отменить заявку
@@ -294,12 +304,20 @@ export default function Friends() {
         {!loading && !myFriends.length && <div className="empty">Список пуст</div>}
         <div className="friends-grid">
           {myFriends.map((u) => (
-            <div key={u.id} className="friend-card">
-              <Avatar src={u.avatar_url} size={64} /> {/* 👈 аватар */}
-              <UserCard user={u} isFriend />
-              <button className="btn-remove" onClick={() => removeFriend(u.id)}>
-                Удалить из друзей
-              </button>
+            <div key={u.id} className="friend-row">
+              <Avatar src={u.avatar_url} size={48} />
+              <div className="info">
+                <div className="name">{u.name}</div>
+                <div className="tg">@{u.telegram_name}</div>
+              </div>
+              <div className="actions">
+                <button onClick={() => window.location.href = `/user/${u.id}`}>
+                  Профиль
+                </button>
+                <button className="btn-remove" onClick={() => removeFriend(u.id)}>
+                  Удалить
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -307,3 +325,4 @@ export default function Friends() {
     </div>
   );
 }
+

@@ -16,12 +16,14 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
+  padding-bottom: 80px; /* 👈 отступ под футер (подбери под его высоту) */
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
   color: var(--text);
   font-family: 'Roboto', sans-serif;
 }
+
 
 /* Секции */
 .friends-section {
@@ -189,5 +191,111 @@
   }
   .friends-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-dark-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.friend-row .info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.friend-row .name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.friend-row .tg {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.friend-row .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.friend-row button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  transition: background .2s, color .2s, transform .1s;
+}
+
+.friend-row button:hover {
+  transform: translateY(-2px);
+}
+
+/* Кнопки */
+.friend-row .btn-add {
+  border-color: var(--accent);
+}
+
+.friend-row .btn-add:hover {
+  background: var(--accent);
+  color: var(--bg-dark-1);
+}
+
+.friend-row .btn-remove {
+  border-color: var(--danger);
+}
+
+.friend-row .btn-remove:hover {
+  background: var(--danger);
+  color: var(--bg-dark-1);
+}
+
+.friend-row .btn-accept {
+  border-color: var(--accent);
+}
+
+.friend-row .btn-accept:hover {
+  background: var(--accent);
+  color: var(--bg-dark-1);
+}
+
+.friend-row .btn-decline {
+  border-color: var(--danger);
+}
+
+.friend-row .btn-decline:hover {
+  background: var(--danger);
+  color: var(--bg-dark-1);
+}
+
+
+
+.friend-row .actions button {
+  padding: 4px 8px;          /* 👈 меньше отступы */
+  font-size: 0.85rem;        /* 👈 уменьшенный шрифт */
+  max-width: 120px;          /* 👈 ограничение ширины */
+  white-space: nowrap;       /* 👈 текст не переносится */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* 👈 если текст длинный — троеточие */
+}
+
+
+@media (max-width: 640px) {
+  .friend-row .actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .friend-row .actions button {
+    width: 100%;
+    max-width: none;
   }
 }

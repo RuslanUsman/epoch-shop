@@ -12,15 +12,18 @@
 }
 
 /* Общий фон страницы */
+/* Общий фон страницы */
 .userprofile-page {
   min-height: 100vh;
   padding: 16px;
+  padding-bottom: 80px; /* 👈 отступ снизу под футер */
   background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
   display: flex;
   justify-content: center;
   color: var(--text);
   font-family: 'Segoe UI', sans-serif;
 }
+
 
 /* Карточка профиля */
 .userprofile-card {

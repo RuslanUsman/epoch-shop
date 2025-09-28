@@ -190,3 +190,37 @@
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+
+
+
+.status {
+  font-size: 14px;
+  margin-left: 6px;
+}
+
+.status.read {
+  color: #4fc3f7; /* голубые галочки для прочитанного */
+}
+
+
+
+.message-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.message-row.incoming {
+  flex-direction: row;
+}
+
+.message-row.outgoing {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin: 0 8px;
+}

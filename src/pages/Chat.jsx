@@ -8,35 +8,32 @@ import "./common.css"
 import "./chat.css"
 
 export default function Chat() {
-  const { id: otherId } = useParams()
+  const { id: dialogId } = useParams()
   const navigate = useNavigate()
   const { setActiveChatId } = useContext(ActiveChatContext)
 
   const [me, setMe] = useState(null)
   const [messages, setMessages] = useState([])
-  const [profiles, setProfiles] = useState({})
   const [text, setText] = useState("")
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
   const bottomRef = useRef(null)
   const channelRef = useRef(null)
 
-  // Строгая проверка UUID
   const isValidUUID =
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-      otherId
+      dialogId
     )
 
-  // Инициализация: авторизация → история → подписка → пометка как прочитано
   useEffect(() => {
     if (!isValidUUID) return
-    setActiveChatId(otherId)
+    setActiveChatId(dialogId)
     let cancelled = false
 
     async function initChat() {
       const { data: { user }, error } = await supabase.auth.getUser()
       if (error) {
-        console.error("Ошибка авторизации:", error)
+        console.error("Ошибка авторизации:", error.message)
         return
       }
       if (!user) {
@@ -46,9 +43,9 @@ export default function Chat() {
       if (cancelled) return
 
       setMe(user)
-      await loadMessages(user.id, otherId, false)
-      subscribeToMessages(user.id, otherId)
-      await markAsRead(user.id, otherId)
+      await loadMessages(dialogId, false)
+      subscribeToMessages(dialogId, user.id)
+      await markAsRead(user.id, dialogId)
     }
 
     initChat()
@@ -57,90 +54,62 @@ export default function Chat() {
       setActiveChatId(null)
       if (channelRef.current) supabase.removeChannel(channelRef.current)
     }
-  }, [otherId, isValidUUID, navigate, setActiveChatId])
+  }, [dialogId, isValidUUID, navigate, setActiveChatId])
 
-  // Загрузка истории + устранение дубликатов
-  async function loadMessages(myId, otherId, smooth = true) {
-    const filter =
-      `and(sender_id.eq.${myId},receiver_id.eq.${otherId}),` +
-      `and(sender_id.eq.${otherId},receiver_id.eq.${myId})`
-
+    // Загрузка сообщений по dialogId
+  async function loadMessages(dialogId, smooth = true) {
     const { data, error } = await supabase
       .from("messages")
-      .select("*")
-      .or(filter)
+      .select("*, profiles!messages_sender_id_fkey(id, name, avatar_url)")
+      .eq("dialog_id", dialogId)
       .order("created_at", { ascending: true })
 
     if (error) {
-      console.error("Ошибка загрузки сообщений:", error)
+      console.error("Ошибка загрузки сообщений:", error.message)
       return
     }
-    const unique = Array.from(new Map(data.map(m => [m.id, m])).values())
-    setMessages(unique)
-    await ensureProfilesLoaded(unique)
+    setMessages(data)
     scrollToBottom(smooth)
   }
 
-  // Подгружаем профили авторов сообщений
-  async function ensureProfilesLoaded(msgs) {
-    const ids = Array.from(new Set(msgs.map(m => m.sender_id)))
-    const missing = ids.filter(id => !profiles[id])
-    if (!missing.length) return
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, name, avatar_url")
-      .in("id", missing)
-
-    if (error) {
-      console.error("Ошибка подгрузки профилей:", error)
-      return
-    }
-    setProfiles(prev => {
-      const next = { ...prev }
-      data.forEach(p => (next[p.id] = p))
-      return next
-    })
-  }
-
-  // Помечаем входящие как прочитанные (MessagesContext сам уменьшит счётчик по UPDATE)
-  async function markAsRead(myId, otherId) {
+  // Помечаем входящие как прочитанные
+  async function markAsRead(myId, dialogId) {
     const { error } = await supabase
       .from("messages")
       .update({ read_at: new Date().toISOString() })
-      .eq("receiver_id", myId)
-      .eq("sender_id", otherId)
+      .eq("dialog_id", dialogId)
+      .neq("sender_id", myId)
       .is("read_at", null)
 
-    if (error) console.error("Ошибка markAsRead:", error)
+    if (error) console.error("Ошибка markAsRead:", error.message)
   }
 
-  // Реалтайм-подписка на новые сообщения
-  function subscribeToMessages(myId, otherId) {
+  // Подписка на новые сообщения
+  function subscribeToMessages(dialogId, myId) {
     const channel = supabase
-      .channel(`chat_${myId}_${otherId}`)
+      .channel(`chat_${dialogId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages", filter: `dialog_id=eq.${dialogId}` },
         async ({ new: msg }) => {
-          const inThisChat =
-            (msg.sender_id === myId && msg.receiver_id === otherId) ||
-            (msg.sender_id === otherId && msg.receiver_id === myId)
-          if (!inThisChat) return
-
           setMessages(prev => {
-            if (prev.some(m => m.id === msg.id)) {
-              return prev.map(m => (m.id === msg.id ? msg : m))
+            // ищем оптимистичное сообщение с тем же текстом и отправителем
+            const tempIndex = prev.findIndex(
+              m => m._optimistic && m.sender_id === msg.sender_id && m.content === msg.content
+            )
+            if (tempIndex !== -1) {
+              const copy = [...prev]
+              copy[tempIndex] = msg
+              return copy
             }
-            return [...prev, msg]
+            if (!prev.some(m => m.id === msg.id)) {
+              return [...prev, msg]
+            }
+            return prev
           })
-
-          await ensureProfilesLoaded([msg])
           scrollToBottom(true)
-
-          // Автоматически помечаем входящее как прочитанное
-          if (msg.receiver_id === myId) {
-            await markAsRead(myId, otherId)
+          if (msg.sender_id !== myId) {
+            await markAsRead(myId, dialogId)
           }
         }
       )
@@ -149,14 +118,14 @@ export default function Chat() {
     channelRef.current = channel
   }
 
-  // Отправка сообщения с оптимистичным UI
+  // Отправка сообщения
   async function sendMessage() {
     if (!text.trim() || !me || !isValidUUID) return
 
     const optimistic = {
       id: `temp-${Date.now()}`,
       sender_id: me.id,
-      receiver_id: otherId,
+      dialog_id: dialogId,
       content: text.trim(),
       created_at: new Date().toISOString(),
       _optimistic: true
@@ -168,41 +137,28 @@ export default function Chat() {
     const { data, error } = await supabase
       .from("messages")
       .insert({
+        dialog_id: dialogId,
         sender_id: me.id,
-        receiver_id: otherId,
         content: optimistic.content
       })
-      .select()
+      .select("*, profiles!messages_sender_id_fkey(id, name, avatar_url)")
       .single()
 
     if (error) {
-      console.error("Ошибка отправки:", error)
-      setMessages(prev => prev.filter(m => m.id !== optimistic.id))
+      console.error("Ошибка отправки:", error.message)
+      setMessages(prev =>
+        prev.map(m => (m.id === optimistic.id ? { ...m, failed: true } : m))
+      )
       return
     }
-    setMessages(prev => prev.map(m => (m.id === optimistic.id ? data : m)))
+
+    // заменяем временное сообщение на настоящее
+    setMessages(prev =>
+      prev.map(m => (m.id === optimistic.id ? data : m))
+    )
   }
 
-  // Преобразуем unified-код эмодзи в символ
-  function unifiedToNative(unified) {
-    return unified
-      .split("-")
-      .map(u => String.fromCodePoint(parseInt(u, 16)))
-      .join("")
-  }
-
-  // Обработчик выбора эмодзи
-  function onEmojiClick(emojiData) {
-    const sym =
-      emojiData.native ||
-      emojiData.emoji ||
-      (emojiData.unified && unifiedToNative(emojiData.unified)) ||
-      ""
-    setText(prev => prev + sym)
-    setShowEmojiPicker(false)
-  }
-
-  // Группировка сообщений по датам
+  // Утилиты
   function groupMessagesByDate(msgs) {
     const groups = {}
     msgs.forEach(m => {
@@ -226,13 +182,11 @@ export default function Chat() {
 
   function scrollToBottom(smooth = true) {
     requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto"
-      })
+      bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" })
     })
   }
 
-  if (!isValidUUID) {
+    if (!isValidUUID) {
     return (
       <div className="chat-page">
         <p className="chat-error">Ошибка: некорректный идентификатор чата.</p>
@@ -248,24 +202,30 @@ export default function Chat() {
         {grouped.map(group => (
           <div key={group.date} className="message-group">
             <div className="date-separator">{group.label}</div>
+
             {group.items.map(m => {
-              const sender = profiles[m.sender_id] || {}
               const mine = m.sender_id === me?.id
               return (
                 <div
                   key={m.id}
                   className={`message-row ${mine ? "outgoing" : "incoming"} ${
                     m._optimistic ? "optimistic" : ""
-                  }`}
+                  } ${m.failed ? "failed" : ""}`}
                 >
-                  <img
-                    src={sender.avatar_url || "/images/avatar-placeholder.png"}
-                    alt=""
-                    className="avatar"
-                  />
+                  {/* Аватарка собеседника слева */}
+                  {!mine && (
+                    <img
+                      src={m.profiles?.avatar_url || "/images/avatar-placeholder.png"}
+                      alt={m.profiles?.name || "Аватар"}
+                      className="message-avatar"
+                    />
+                  )}
+
                   <div className="message-bubble">
                     <div className="message-header">
-                      <span className="sender-name">{sender.name || "..."}</span>
+                      <span className="sender-name">
+                        {m.profiles?.name || (mine ? "Вы" : "Собеседник")}
+                      </span>
                       <span className="message-time">
                         {new Date(m.created_at).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -273,11 +233,20 @@ export default function Chat() {
                         })}
                       </span>
                     </div>
+
                     <div className="message-content">{m.content}</div>
+
+                    {/* Статус только у моих сообщений */}
                     {mine && (
                       <div className="message-footer">
-                        <span className="status">
-                          {m._optimistic ? "⏳" : m.read_at ? "✅" : "✔"}
+                        <span className={`status ${m.read_at ? "read" : ""}`}>
+                          {m.failed
+                            ? "❌"
+                            : m._optimistic
+                            ? "⏳"
+                            : m.read_at
+                            ? "✔✔"
+                            : "✔"}
                         </span>
                       </div>
                     )}
@@ -317,7 +286,7 @@ export default function Chat() {
 
         {showEmojiPicker && (
           <div className="emoji-picker-container">
-            <Picker onEmojiClick={onEmojiClick} />
+            <Picker onEmojiClick={(emoji) => setText(prev => prev + (emoji.native || ""))} />
           </div>
         )}
       </div>

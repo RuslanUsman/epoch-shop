@@ -1,95 +1,102 @@
 // src/pages/DialogList.jsx
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { Link } from "react-router-dom";
-import "../styles/common.css";
-import "../styles/dialogList.css";
+import { useEffect, useState } from "react"
+import { supabase } from "../lib/supabaseClient"
+import { Link } from "react-router-dom"
+import "../styles/common.css"
+import "../styles/dialogList.css"
 
 export default function DialogList() {
-  const [me, setMe] = useState(null);
-  const [dialogs, setDialogs] = useState([]);
+  const [me, setMe] = useState(null)
+  const [dialogs, setDialogs] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setMe(user);
-      await loadDialogs(user.id);
-      subscribeToMessages(user.id);
-    })();
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error) {
+        console.error("Ошибка получения текущего пользователя:", error.message)
+        return
+      }
+      if (!user) return
 
-    return () => supabase.removeAllChannels();
-  }, []);
+      setMe(user)
+      await loadDialogs(user.id)
+      subscribeToDialogs(user.id)
+      setLoading(false)
+    })()
 
+    return () => supabase.removeAllChannels()
+  }, [])
+
+  // Загружаем список диалогов
   async function loadDialogs(myId) {
-    const { data: messages, error } = await supabase
-      .from("messages")
-      .select("*")
-      .or(`sender_id.eq.${myId},receiver_id.eq.${myId}`)
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("dialogs")
+      .select(`
+        id,
+        user1,
+        user2,
+        last_message_at,
+        messages (
+          id,
+          content,
+          created_at,
+          read_at,
+          sender_id
+        ),
+        user1_profile:profiles!dialogs_user1_fkey (id, name, avatar_url),
+        user2_profile:profiles!dialogs_user2_fkey (id, name, avatar_url)
+      `)
+      .order("last_message_at", { ascending: false })
 
     if (error) {
-      console.error("Ошибка загрузки диалогов:", error);
-      return;
+      console.error("Ошибка загрузки диалогов:", error.message)
+      return
     }
 
-    const lastByUser = new Map();
-    const unreadMap = new Map();
+    const list = data.map(d => {
+      const otherId = d.user1 === myId ? d.user2 : d.user1
+      const otherProfile =
+        d.user1_profile?.id === otherId ? d.user1_profile : d.user2_profile
 
-    messages.forEach(msg => {
-      const otherId = msg.sender_id === myId ? msg.receiver_id : msg.sender_id;
-      if (!lastByUser.has(otherId)) lastByUser.set(otherId, msg);
-      if (msg.receiver_id === myId && !msg.read_at) {
-        unreadMap.set(otherId, (unreadMap.get(otherId) || 0) + 1);
+      // Последнее сообщение
+      const lastMessage = d.messages?.length
+        ? d.messages.reduce((a, b) =>
+            new Date(a.created_at) > new Date(b.created_at) ? a : b
+          )
+        : null
+
+      // Количество непрочитанных
+      const unreadCount =
+        d.messages?.filter(m => m.sender_id !== myId && !m.read_at).length || 0
+
+      return {
+        id: d.id,
+        name: otherProfile?.name || "Без имени",
+        avatar_url: otherProfile?.avatar_url,
+        lastMessage,
+        unreadCount,
       }
-    });
+    })
 
-    const ids = Array.from(lastByUser.keys());
-    if (!ids.length) { 
-      setDialogs([]); 
-      return; 
-    }
-
-    const { data: profiles, error: pErr } = await supabase
-      .from("profiles")
-      .select("id, name, avatar_url")
-      .in("id", ids);
-
-    if (pErr) {
-      console.error("Ошибка загрузки профилей:", pErr);
-      return;
-    }
-
-    const list = profiles
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        avatar_url: p.avatar_url,
-        lastMessage: lastByUser.get(p.id),
-        unreadCount: unreadMap.get(p.id) || 0
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
-      );
-
-    setDialogs(list);
+    setDialogs(list)
   }
 
-  function subscribeToMessages(myId) {
+  // Подписка на изменения в сообщениях
+  function subscribeToDialogs(myId) {
     supabase
       .channel("dialogs_listener")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        payload => {
-          const msg = payload.new;
-          if (msg.sender_id === myId || msg.receiver_id === myId) {
-            loadDialogs(myId);
-          }
-        }
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => loadDialogs(myId)
       )
-      .subscribe();
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        () => loadDialogs(myId)
+      )
+      .subscribe()
   }
 
   return (
@@ -98,11 +105,14 @@ export default function DialogList() {
         <h2>Сообщения</h2>
       </div>
 
-      {dialogs.length === 0 && <div className="empty">Нет диалогов</div>}
+      {loading && <div className="loading">Загрузка...</div>}
+      {!loading && dialogs.length === 0 && (
+        <div className="empty">Нет диалогов</div>
+      )}
 
       <div className="dialog-items">
         {dialogs.map(d => (
-          <Link to={`/chat/${d.id}`} key={d.id} className="dialog-item">
+          <Link to={`/messages/${d.id}`} key={d.id} className="dialog-item">
             <img
               src={d.avatar_url || "/images/avatar-placeholder.png"}
               alt=""
@@ -110,16 +120,20 @@ export default function DialogList() {
             />
             <div className="dialog-info">
               <div className="dialog-top">
-                <span className="dialog-name">{d.name || "Без имени"}</span>
+                <span className="dialog-name">{d.name}</span>
                 <span className="dialog-time">
-                  {new Date(d.lastMessage.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
+                  {d.lastMessage
+                    ? new Date(d.lastMessage.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
                 </span>
               </div>
               <div className="dialog-bottom">
-                <span className="dialog-last">{d.lastMessage?.content}</span>
+                <span className="dialog-last">
+                  {d.lastMessage?.content || "Нет сообщений"}
+                </span>
                 {d.unreadCount > 0 && (
                   <span className="unread-badge">{d.unreadCount}</span>
                 )}
@@ -129,5 +143,5 @@ export default function DialogList() {
         ))}
       </div>
     </div>
-  );
+  )
 }

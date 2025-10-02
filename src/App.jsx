@@ -26,6 +26,7 @@ import Settings from "./pages/Settings";
 import AdminPanel from "./pages/AdminPanel";
 import UsersList from "./pages/UsersList";
 import VipInfo from "./pages/VipInfo";
+import NotFound from "./pages/NotFound";
 
 import { supabase } from "./lib/supabaseClient";
 
@@ -42,12 +43,14 @@ function AdminRoute({ children }) {
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+      if (!user) return setLoading(false);
+
       const { data } = await supabase
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
         .single();
+
       if (data?.is_admin) setIsAdmin(true);
       setLoading(false);
     };
@@ -55,7 +58,7 @@ function AdminRoute({ children }) {
   }, []);
 
   if (loading) return <p>Загрузка...</p>;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin) return <Navigate to="/register" replace />;
   return children;
 }
 
@@ -66,25 +69,19 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session || null);
-      if (data.session?.user) {
-        applyUserTheme(data.session.user.id);
-      }
+      if (data.session?.user) applyUserTheme(data.session.user.id);
       setLoading(false);
     });
 
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user) {
-        applyUserTheme(newSession.user.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user) applyUserTheme(newSession.user.id);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   async function applyUserTheme(userId) {
@@ -93,14 +90,13 @@ export default function App() {
       .select("theme")
       .eq("id", userId)
       .single();
+
     if (data?.theme) {
       document.documentElement.dataset.theme = data.theme;
     }
   }
 
-  if (loading) {
-    return <p>Загрузка...</p>;
-  }
+  if (loading) return <p>Загрузка...</p>;
 
   return (
     <Router basename="/epoch-shop">
@@ -113,16 +109,23 @@ export default function App() {
                 <main className="flex-1">
                   <ErrorBoundary>
                     <Routes>
+                      {/* Главная */}
                       <Route
                         path="/"
                         element={
-                          <Navigate to={session ? "/profile" : "/register"} replace />
+                          <Navigate
+                            to={session ? "/profile" : "/register"}
+                            replace
+                          />
                         }
                       />
+
+                      {/* Публичные страницы */}
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/about" element={<About />} />
 
+                      {/* Приватные страницы */}
                       <Route
                         path="/profile"
                         element={
@@ -203,6 +206,8 @@ export default function App() {
                           </ProtectedRoute>
                         }
                       />
+
+                      {/* Админка */}
                       <Route
                         path="/admin"
                         element={
@@ -219,6 +224,9 @@ export default function App() {
                           </AdminRoute>
                         }
                       />
+
+                      {/* Фолбэк */}
+                      <Route path="*" element={<NotFound />} />
                     </Routes>
                   </ErrorBoundary>
                 </main>

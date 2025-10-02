@@ -19,6 +19,7 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [giftPoints, setGiftPoints] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Загружаем текущего авторизованного пользователя
   useEffect(() => {
@@ -39,27 +40,36 @@ const UserProfile = () => {
     };
     fetchCurrentUser();
   }, []);
-
   // Загружаем профиль того, на кого зашли
   useEffect(() => {
     const fetchUser = async () => {
+      console.log("Ищу профиль по id из URL:", id);
+      setLoading(true);
+      setErrorMsg("");
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Ошибка загрузки профиля:", error.message);
+        setErrorMsg("Ошибка загрузки профиля");
+        setUser(null);
+      } else if (!data) {
+        console.warn("Профиль не найден для id:", id);
+        setErrorMsg("Пользователь не найден");
         setUser(null);
       } else {
         setUser(data);
       }
       setLoading(false);
     };
-    fetchUser();
+    if (id) fetchUser();
   }, [id]);
-    // 🎁 Подарить баллы
+
+  // 🎁 Подарить баллы
   const handleGift = async () => {
     if (!giftPoints || isNaN(giftPoints)) return;
     const pointsToGift = parseInt(giftPoints, 10);
@@ -109,7 +119,6 @@ const UserProfile = () => {
     alert(`Вы подарили ${pointsToGift} баллов пользователю ${user?.name ?? ""}`);
     setGiftPoints("");
   };
-
   // 👑 Выдать/снять VIP (только админ)
   const toggleVip = async () => {
     if (!currentUser?.is_admin) {
@@ -187,7 +196,7 @@ const UserProfile = () => {
       supabase.removeChannel(channel);
     };
   }, [currentUser, id]);
-    // 💬 Написать сообщение
+  // 💬 Написать сообщение
   const handleMessage = async () => {
     if (!currentUser) {
       alert("Сначала войдите в систему");
@@ -226,6 +235,9 @@ const UserProfile = () => {
     navigate(`/messages/${dialogId}`);
   };
 
+  if (loading) return <p>Загрузка...</p>;
+  if (errorMsg) return <p>{errorMsg}</p>;
+
   return (
     <div className="userprofile-page">
       <div className="userprofile-card">
@@ -256,7 +268,8 @@ const UserProfile = () => {
             )}
           </div>
         </div>
-                <div className="userprofile-gift">
+
+        <div className="userprofile-gift">
           <h3>
             <FaGift /> Подарить баллы
           </h3>
@@ -274,6 +287,7 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+
 
 
 

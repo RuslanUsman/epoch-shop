@@ -9,7 +9,7 @@ import {
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-import ErrorBoundary from "./components/ErrorBoundary"; // 👈 новый импорт
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import Register from "./pages/Register";
 import Login from "./pages/Login";
@@ -103,32 +103,26 @@ export default function App() {
   }
 
   return (
-    <Router basename={import.meta.env.BASE_URL}>
+    <Router basename="/epoch-shop">
       <MessagesProvider>
         <UserProvider>
           <ActiveChatProvider>
             <CartProvider>
               <div className="min-h-screen flex flex-col">
                 <Navbar session={session} />
-
                 <main className="flex-1">
-                  {/* 👇 Оборачиваем все маршруты в ErrorBoundary */}
                   <ErrorBoundary>
                     <Routes>
-                      {/* Главная */}
                       <Route
                         path="/"
                         element={
                           <Navigate to={session ? "/profile" : "/register"} replace />
                         }
                       />
-
-                      {/* Публичные страницы */}
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/about" element={<About />} />
 
-                      {/* Приватные страницы */}
                       <Route
                         path="/profile"
                         element={
@@ -153,8 +147,6 @@ export default function App() {
                           </ProtectedRoute>
                         }
                       />
-
-                      {/* 📩 Диалоги */}
                       <Route
                         path="/messages"
                         element={
@@ -171,8 +163,6 @@ export default function App() {
                           </ProtectedRoute>
                         }
                       />
-
-                      {/* 🛒 Магазин */}
                       <Route
                         path="/store"
                         element={
@@ -205,7 +195,6 @@ export default function App() {
                           </ProtectedRoute>
                         }
                       />
-
                       <Route
                         path="/settings"
                         element={
@@ -214,8 +203,6 @@ export default function App() {
                           </ProtectedRoute>
                         }
                       />
-
-                      {/* 👑 Админка */}
                       <Route
                         path="/admin"
                         element={
@@ -235,7 +222,6 @@ export default function App() {
                     </Routes>
                   </ErrorBoundary>
                 </main>
-
                 <Footer />
               </div>
             </CartProvider>

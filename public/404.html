@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <meta http-equiv="refresh" content="0; url=/epoch-shop/" />
-    <title>Страница не найдена</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Epoch Shop</title>
+    <script type="module">
+      // Перенаправляем все 404 на index.html, чтобы React Router обработал маршрут
+      const redirectTo = window.location.protocol + '//' + window.location.host + '/epoch-shop/';
+      // Сохраняем путь, чтобы React Router его увидел
+      sessionStorage.redirect = window.location.pathname + window.location.search + window.location.hash;
+      window.location.replace(redirectTo);
+    </script>
   </head>
   <body>
-    <p>Страница не найдена. <a href="/epoch-shop/">Перейти на главную</a>.</p>
+    <p>Перенаправление...</p>
   </body>
 </html>

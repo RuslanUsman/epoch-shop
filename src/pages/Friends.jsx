@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "../components/Avatar";
+import { Link } from "react-router-dom";   // ✅ используем Link для переходов
 import "./Friends.css";
 
 export default function Friends() {
@@ -21,11 +22,13 @@ export default function Friends() {
         data: { user },
         error: authErr,
       } = await supabase.auth.getUser();
+
       if (authErr) {
-        console.error("Ошибка при получении пользователя:", authErr);
+        console.error("Ошибка при получении пользователя:", authErr.message);
         setLoading(false);
         return;
       }
+
       setMe(user);
 
       if (user) {
@@ -68,7 +71,8 @@ export default function Friends() {
   async function refresh(uid) {
     setLoading(true);
 
-    const { data: pend } = await supabase
+    // Загружаем заявки в друзья
+    const { data: pend, error: pendErr } = await supabase
       .from("friend_requests")
       .select(`
         id,
@@ -81,248 +85,282 @@ export default function Friends() {
       .or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
       .eq("status", "pending")
       .order("id", { ascending: false });
-    setPending(pend || []);
 
-    const { data: fr } = await supabase
-      .from("friends")
-      .select(`
-        user_a,
-        user_b,
-        a:user_a(id, name, telegram_name, avatar_url),
-        b:user_b(id, name, telegram_name, avatar_url)
-      `)
-      .or(`user_a.eq.${uid},user_b.eq.${uid}`);
+    if (pendErr) {
+      console.error("Ошибка загрузки заявок:", pendErr.message);
+      setPending([]);
+    } else {
+      setPending(pend || []);
+    }
 
+
+
+
+      // Загружаем друзей
+  const { data: fr, error: frErr } = await supabase
+    .from("friends")
+    .select(`
+      user_a,
+      user_b,
+      a:user_a(id, name, telegram_name, avatar_url),
+      b:user_b(id, name, telegram_name, avatar_url)
+    `)
+    .or(`user_a.eq.${uid},user_b.eq.${uid}`);
+
+  if (frErr) {
+    console.error("Ошибка загрузки друзей:", frErr.message);
+    setMyFriends([]);
+  } else {
     const normalized = (fr || []).map((r) => (r.user_a === uid ? r.b : r.a));
     setMyFriends(normalized);
-
-    setLoading(false);
   }
-  // Поиск профилей
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!query.trim()) {
-        setResults([]);
-      } else {
-        search(query.trim());
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query]);
 
-  async function search(text) {
+  setLoading(false);
+}
+
+// Поиск профилей
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (!query.trim()) {
+      setResults([]);
+    } else {
+      search(query.trim());
+    }
+  }, 300);
+  return () => clearTimeout(timer);
+}, [query]);
+
+async function search(text) {
+  try {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, name, telegram_name, avatar_url")
       .or(`name.ilike.%${text}%,telegram_name.ilike.%${text}%`)
       .limit(20);
-    if (error) {
-      console.error("Ошибка поиска:", error);
-      return;
-    }
+
+    if (error) throw error;
+
     setResults((data || []).filter((u) => u.id !== me?.id));
+  } catch (err) {
+    console.error("Ошибка поиска:", err.message);
   }
-
-  // Отправка заявки
-  async function addFriend(user) {
-    if (!me || !user.id) return;
-
-    setPending((p) => [
-      ...p,
-      {
-        id: `temp-${user.id}`,
-        sender_id: me.id,
-        receiver_id: user.id,
-        status: "pending",
-        sender: me,
-        receiver: user,
-        _optimistic: true,
-      },
-    ]);
-
-    const { error } = await supabase
-      .from("friend_requests")
-      .upsert(
-        { sender_id: me.id, receiver_id: user.id, status: "pending" },
-        { onConflict: ["sender_id", "receiver_id"] }
-      );
-    if (error) {
-      alert("Не удалось отправить заявку: " + error.message);
-      setPending((p) => p.filter((r) => r.id !== `temp-${user.id}`));
-      console.error(error);
-    }
-  }
-
-  // Отмена заявки
-  async function cancelRequest(reqId) {
-    setPending((p) => p.filter((r) => r.id !== reqId));
-    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
-    if (error) {
-      alert("Не удалось отменить заявку: " + error.message);
-      console.error(error);
-      await refresh(me.id);
-    }
-  }
-
-  // Принять заявку
-  async function acceptRequest(req) {
-    setPending((p) => p.filter((r) => r.id !== req.id));
-    setMyFriends((f) => [...f, req.sender]);
-
-    await supabase.from("friend_requests").update({ status: "accepted" }).eq("id", req.id);
-
-    const [a, b] = [req.sender_id, req.receiver_id].sort();
-    await supabase.from("friends").insert({ user_a: a, user_b: b });
-
-    await refresh(me.id);
-  }
-
-  // Отклонить заявку
-  async function declineRequest(reqId) {
-    setPending((p) => p.filter((r) => r.id !== reqId));
-    const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
-    if (error) {
-      alert("Не удалось отклонить заявку: " + error.message);
-      console.error(error);
-    }
-    await refresh(me.id);
-  }
-
-  // Удалить из друзей
-  async function removeFriend(friendId) {
-    if (!me) return;
-
-    setMyFriends((f) => f.filter((u) => u.id !== friendId));
-
-    const [a, b] = [me.id, friendId].sort();
-    await supabase.from("friends").delete().match({ user_a: a, user_b: b });
-    await supabase
-      .from("friend_requests")
-      .delete()
-      .or(`and(sender_id.eq.${me.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${me.id})`);
-
-    await refresh(me.id);
-  }
-  if (!me) {
-    return loading
-      ? <div className="p-6">Загрузка...</div>
-      : <div className="p-6">Авторизуйтесь, чтобы увидеть друзей</div>;
-  }
-
-  const incoming = pending.filter((r) => r.receiver_id === me.id);
-  const outgoing = pending.filter((r) => r.sender_id === me.id);
-
-  return (
-    <div className="friends-page">
-      {/* Поиск друзей */}
-      <div className="friends-section">
-        <h2>Поиск друзей</h2>
-        <div className="friends-search">
-          <input
-            value={query}
-            placeholder="Имя или Telegram-имя"
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button onClick={() => search(query)}>Найти</button>
-        </div>
-        <div className="friends-grid">
-          {results.map((u) => {
-            const isFriend = myFriends.some(f => f.id === u.id);
-            return (
-              <div key={u.id} className="friend-row">
-                <Avatar src={u.avatar_url} size={48} />
-                <div className="info">
-                  <div className="name">{u.name}</div>
-                  <div className="tg">@{u.telegram_name}</div>
-                </div>
-                <div className="actions">
-                  <button onClick={() => window.location.href = `/user/${u.id}`}>
-                    Профиль
-                  </button>
-                  {isFriend ? (
-                    <button className="btn-remove" onClick={() => removeFriend(u.id)}>
-                      Удалить из друзей
-                    </button>
-                  ) : (
-                    <button className="btn-add" onClick={() => addFriend(u)}>
-                      Добавить в друзья
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Входящие заявки */}
-      <div className="friends-section">
-        <h2>Входящие заявки</h2>
-        {incoming.length === 0 && <div className="empty">Нет новых заявок</div>}
-        {incoming.map((r) => (
-          <div key={r.id} className="friend-row">
-            <Avatar src={r.sender.avatar_url} size={48} />
-            <div className="info">
-              <div className="name">{r.sender.name}</div>
-              <div className="tg">@{r.sender.telegram_name}</div>
-            </div>
-            <div className="actions">
-              <button className="btn-accept" onClick={() => acceptRequest(r)}>
-                Принять
-              </button>
-              <button className="btn-decline" onClick={() => declineRequest(r.id)}>
-                Отклонить
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-            {/* Исходящие заявки */}
-      <div className="friends-section">
-        <h2>Исходящие заявки</h2>
-        {outgoing.length === 0 && <div className="empty">Нет отправленных заявок</div>}
-        {outgoing.map((r) => (
-          <div key={r.id} className="friend-row">
-            <Avatar src={r.receiver.avatar_url} size={48} />
-            <div className="info">
-              <div className="name">{r.receiver.name}</div>
-              <div className="tg">@{r.receiver.telegram_name}</div>
-            </div>
-            <div className="actions">
-              <button className="btn-decline" onClick={() => cancelRequest(r.id)}>
-                Отменить заявку
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Мои друзья */}
-      <div className="friends-section">
-        <h2>Мои друзья</h2>
-        {loading && !myFriends.length && <div className="empty">Загрузка...</div>}
-        {!loading && !myFriends.length && <div className="empty">Список пуст</div>}
-        <div className="friends-grid">
-          {myFriends.map((u) => (
-            <div key={u.id} className="friend-row">
-              <Avatar src={u.avatar_url} size={48} />
-              <div className="info">
-                <div className="name">{u.name}</div>
-                <div className="tg">@{u.telegram_name}</div>
-              </div>
-              <div className="actions">
-                <button onClick={() => window.location.href = `/user/${u.id}`}>
-                  Профиль
-                </button>
-                <button className="btn-remove" onClick={() => removeFriend(u.id)}>
-                  Удалить
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
+// Отправка заявки
+async function addFriend(user) {
+  if (!me || !user.id) return;
+
+  // Оптимистичное обновление
+  setPending((p) => [
+    ...p,
+    {
+      id: `temp-${user.id}`,
+      sender_id: me.id,
+      receiver_id: user.id,
+      status: "pending",
+      sender: me,
+      receiver: user,
+      _optimistic: true,
+    },
+  ]);
+
+  const { error } = await supabase
+    .from("friend_requests")
+    .upsert(
+      { sender_id: me.id, receiver_id: user.id, status: "pending" },
+      { onConflict: ["sender_id", "receiver_id"] }
+    );
+
+  if (error) {
+    alert("Не удалось отправить заявку: " + error.message);
+    setPending((p) => p.filter((r) => r.id !== `temp-${user.id}`));
+    console.error("Ошибка отправки заявки:", error.message);
+  }
+}
+
+// Отмена заявки
+async function cancelRequest(reqId) {
+  setPending((p) => p.filter((r) => r.id !== reqId));
+  const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
+  if (error) {
+    alert("Не удалось отменить заявку: " + error.message);
+    console.error("Ошибка отмены заявки:", error.message);
+    await refresh(me.id);
+  }
+}
+
+// Принять заявку
+async function acceptRequest(req) {
+  setPending((p) => p.filter((r) => r.id !== req.id));
+  setMyFriends((f) => [...f, req.sender]);
+
+  await supabase.from("friend_requests").update({ status: "accepted" }).eq("id", req.id);
+
+  // Сохраняем дружбу в нормализованном виде
+  const [a, b] = [req.sender_id, req.receiver_id].sort();
+  await supabase.from("friends").insert({ user_a: a, user_b: b });
+
+  await refresh(me.id);
+}
+
+// Отклонить заявку
+async function declineRequest(reqId) {
+  setPending((p) => p.filter((r) => r.id !== reqId));
+  const { error } = await supabase.from("friend_requests").delete().eq("id", reqId);
+  if (error) {
+    alert("Не удалось отклонить заявку: " + error.message);
+    console.error("Ошибка отклонения заявки:", error.message);
+  }
+  await refresh(me.id);
+}
+
+// Удалить из друзей
+async function removeFriend(friendId) {
+  if (!me) return;
+
+  setMyFriends((f) => f.filter((u) => u.id !== friendId));
+
+  const [a, b] = [me.id, friendId].sort();
+  await supabase.from("friends").delete().match({ user_a: a, user_b: b });
+
+  // Чистим возможные заявки между этими пользователями
+  await supabase
+    .from("friend_requests")
+    .delete()
+    .or(
+      `and(sender_id.eq.${me.id},receiver_id.eq.${friendId}),
+       and(sender_id.eq.${friendId},receiver_id.eq.${me.id})`
+    );
+
+  await refresh(me.id);
+}
+
+if (!me) {
+  return loading
+    ? <div className="p-6">Загрузка...</div>
+    : <div className="p-6">Авторизуйтесь, чтобы увидеть друзей</div>;
+}
+
+const incoming = pending.filter((r) => r.receiver_id === me.id);
+const outgoing = pending.filter((r) => r.sender_id === me.id);
+
+return (
+  <div className="friends-page">
+
+
+
+
+  {/* Поиск друзей */}
+  <div className="friends-section">
+    <h2>Поиск друзей</h2>
+    <div className="friends-search">
+      <input
+        value={query}
+        placeholder="Имя или Telegram-имя"
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <button onClick={() => search(query)}>Найти</button>
+    </div>
+    <div className="friends-grid">
+      {results.map((u) => {
+        const isFriend = myFriends.some(f => f.id === u.id);
+        return (
+          <div key={u.id} className="friend-row">
+            <Avatar src={u.avatar_url} size={48} />
+            <div className="info">
+              <div className="name">{u.name}</div>
+              <div className="tg">@{u.telegram_name}</div>
+            </div>
+            <div className="actions">
+              {/* ✅ заменили window.location.href на Link */}
+              <Link to={`/user/${u.id}`} className="btn-profile">
+                Профиль
+              </Link>
+              {isFriend ? (
+                <button className="btn-remove" onClick={() => removeFriend(u.id)}>
+                  Удалить из друзей
+                </button>
+              ) : (
+                <button className="btn-add" onClick={() => addFriend(u)}>
+                  Добавить в друзья
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+
+  {/* Входящие заявки */}
+  <div className="friends-section">
+    <h2>Входящие заявки</h2>
+    {incoming.length === 0 && <div className="empty">Нет новых заявок</div>}
+    {incoming.map((r) => (
+      <div key={r.id} className="friend-row">
+        <Avatar src={r.sender.avatar_url} size={48} />
+        <div className="info">
+          <div className="name">{r.sender.name}</div>
+          <div className="tg">@{r.sender.telegram_name}</div>
+        </div>
+        <div className="actions">
+          <button className="btn-accept" onClick={() => acceptRequest(r)}>
+            Принять
+          </button>
+          <button className="btn-decline" onClick={() => declineRequest(r.id)}>
+            Отклонить
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Исходящие заявки */}
+  <div className="friends-section">
+    <h2>Исходящие заявки</h2>
+    {outgoing.length === 0 && <div className="empty">Нет отправленных заявок</div>}
+    {outgoing.map((r) => (
+      <div key={r.id} className="friend-row">
+        <Avatar src={r.receiver.avatar_url} size={48} />
+        <div className="info">
+          <div className="name">{r.receiver.name}</div>
+          <div className="tg">@{r.receiver.telegram_name}</div>
+        </div>
+        <div className="actions">
+          <button className="btn-decline" onClick={() => cancelRequest(r.id)}>
+            Отменить заявку
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {/* Мои друзья */}
+  <div className="friends-section">
+    <h2>Мои друзья</h2>
+    {loading && !myFriends.length && <div className="empty">Загрузка...</div>}
+    {!loading && !myFriends.length && <div className="empty">Список пуст</div>}
+    <div className="friends-grid">
+      {myFriends.map((u) => (
+        <div key={u.id} className="friend-row">
+          <Avatar src={u.avatar_url} size={48} />
+          <div className="info">
+            <div className="name">{u.name}</div>
+            <div className="tg">@{u.telegram_name}</div>
+          </div>
+          <div className="actions">
+            {/* ✅ заменили window.location.href на Link */}
+            <Link to={`/user/${u.id}`} className="btn-profile">
+              Профиль
+            </Link>
+            <button className="btn-remove" onClick={() => removeFriend(u.id)}>
+              Удалить
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+);
+}

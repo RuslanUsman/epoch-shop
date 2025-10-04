@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="ru">
   <head>
-    <meta http-equiv="refresh" content="0; url=/epoch-shop/" />
-    <title>Страница не найдена</title>
+    <meta charset="UTF-8" />
+    <title>Epoch Shop</title>
+    <script type="module">
+      // Сохраняем путь и редиректим на index.html
+      sessionStorage.redirect =
+        window.location.pathname + window.location.search + window.location.hash;
+      window.location.replace("/epoch-shop/");
+    </script>
   </head>
   <body>
-    <p>Страница не найдена. <a href="/epoch-shop/">Перейти на главную</a>.</p>
+    <p>Перенаправление...</p>
   </body>
 </html>
